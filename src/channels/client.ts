@@ -1,11 +1,13 @@
 import { TelegramClient } from "telegram";
 import { StringSession } from "telegram/sessions";
 import input from "input";
+import config  from "../config";
 
 
-const apiId = process.env.TELEGRAM_ACCOUNT_API_ID;
-const apiHash = process.env.TELEGRAM_ACCOUNT_API_HASH;
+const apiId = config.telegram_account.app_id
+const apiHash = config.telegram_account.hash
 const stringSession = new StringSession(""); // fill this later with the value from session.save()
+
 
 (async () => {
   console.log("Loading interactive example...");

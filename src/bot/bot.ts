@@ -13,7 +13,6 @@ bot.help(async (ctx) => await ctx.reply('Send me a sticker'))
 bot.on(message('sticker'), async (ctx) => await ctx.reply('👍'))
 bot.on(message('text'), async (ctx) => await ctx.reply('Hello World'));
 bot.hears('hi', async (ctx) => await ctx.reply('Hey there'))
-bot.launch();
 
 
 process.once('SIGINT', () => bot.stop('SIGINT'));

@@ -13,13 +13,13 @@
 
 ### Development:
 
-**Install development dependencies:**
-
-`npm install --save-dev`
-
 **Up container:**
 
 `docker compose -f docker-compose-dev.yml up`
+
+**Install development dependencies:**
+
+`docker compose exec app npm install --save-dev`
 
 **Down container:**
 
