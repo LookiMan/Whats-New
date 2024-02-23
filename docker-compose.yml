@@ -3,7 +3,7 @@ version: '3.9'
 services:
   app:
     build: .
-    command: npm run start
+    entrypoint: './bin/entrypoint.sh'
     ports:
       - '$APP_PORT:$APP_PORT'
     volumes:
@@ -17,7 +17,7 @@ services:
         ipv4_address: $NETWORK_PREFIX.2
 
   mysql:
-    image: mysql:latest
+    image: mysql:5.6
     env_file:
       - .env
     ports:

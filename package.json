@@ -9,16 +9,18 @@
         "input": "^1.0.1",
         "typeorm": "^0.3.20",
         "reflect-metadata": "^0.2.1",
-        "mysql": "^2.18.1"
+        "mysql": "^2.18.1",
+        "express": "^4.18.2"
     },
     "devDependencies": {
         "@types/node": "^20.11.19",
-        "prettier": "^2.5.1",
-        "ts-node-dev": "^2.0.0"
+        "@types/express": "^4.17.21",
+        "ts-node-dev": "^2.0.0",
+        "prettier": "^2.5.1"
     },
     "scripts": {
         "start": "node ./dist/server.js",
-        "build": "tsc --build",
+        "build": "tsc --watch",
         "watch": "ts-node-dev --respawn --transpile-only ./src/server.ts"
     }
 }

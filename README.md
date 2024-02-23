@@ -10,16 +10,11 @@
 
 `docker compose build`
 
-
 ### Development:
 
 **Up container:**
 
-`docker compose -f docker-compose-dev.yml up`
-
-**Install development dependencies:**
-
-`docker compose exec app npm install --save-dev`
+`docker compose -f docker-compose.yml up`
 
 **Down container:**
 

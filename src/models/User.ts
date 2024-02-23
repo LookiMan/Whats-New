@@ -11,8 +11,8 @@ export class User {
     firstName: string
 
     @Column()
-    lastName: string | undefined
+    lastName!: string
 
     @Column()
-    username: string | undefined
+    username!: string
 }

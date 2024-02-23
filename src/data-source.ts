@@ -8,7 +8,7 @@ export const AppDataSource = new DataSource({
     type: config.db.type,
     host: config.db.host,
     port: config.db.port,
-    username: config.db.root,
+    username: config.db.user,
     password: config.db.pass,
     database: config.db.name,
     synchronize: true,

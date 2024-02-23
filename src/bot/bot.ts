@@ -17,3 +17,6 @@ bot.hears('hi', async (ctx) => await ctx.reply('Hey there'))
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
+
+
+export { bot }
