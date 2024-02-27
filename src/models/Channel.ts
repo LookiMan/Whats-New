@@ -3,18 +3,15 @@ import { Entity, PrimaryGeneratedColumn, CreateDateColumn, Column } from "typeor
 
 
 @Entity()
-export class User {
+export class Channel {
     @PrimaryGeneratedColumn()
     id: number;
 
     @Column({ type: "bigint" })
-    userId: number;
+    channelId: number;
 
     @Column()
-    firstName: string;
-
-    @Column({ nullable: true })
-    lastName!: string;
+    title: string;
 
     @Column({ nullable: true })
     username!: string;

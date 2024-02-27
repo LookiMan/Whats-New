@@ -1,6 +1,13 @@
 # VS code
 .vscode
 
+# Telegram session
+session
+
+# Media content
+media/*
+!media/.gitkeep
+
 # Logs
 logs
 *.log
