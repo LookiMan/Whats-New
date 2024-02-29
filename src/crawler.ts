@@ -5,11 +5,14 @@ import { EditedMessage, EditedMessageEvent } from "telegram/events/EditedMessage
 import { DeletedMessage, DeletedMessageEvent } from "telegram/events/DeletedMessage";
 
 import { Post } from "./models/Post";
+import { Photo } from "./models/Photo";
+import { Video } from "./models/Video";
 import { AppDataSource } from "./data-source";
 import { Channel } from "./models/Channel";
 
 const QRCode = require('qrcode');
 const fs = require('fs');
+const path = require('path');
 
 
 class Crawler {
@@ -35,41 +38,76 @@ class Crawler {
         this.client.addEventHandler(this.deletedMessageHandler.bind(this), new DeletedMessage({}))
     }
 
-    saveSession(session: Session) {
-        fs.writeFileSync('session', session.save())
+    saveSession(session: Session): void {
+        fs.writeFileSync('session', session.save());
     }
 
-    async newMessageHandler(event: NewMessageEvent) {
+    async newMessageHandler(event: NewMessageEvent): Promise<void> { 
         const post = new Post();
         post.text = event.message.text;
+        post.entities = event.message.entities;
+        
+        post.chatId = Number(event.chatId);
+        post.groupedId = Number(event.message.groupedId);
+
+        post.channel = await this.getChannel(post.chatId);
+
         post.postId = Number(event.message.id);
-        //post.postLink = postLink;
+        if (post?.channel?.username) {
+            post.postLink = `https://t.me/${post.channel.username}/${post.postId}`;
+        }
+
         const date = new Date();
         date.setTime(event.message.date * 1000);
         post.postDate = date;
-        post.entities = event.message.entities;
-        
-        const channel = await this.getChannel(Number(event.chatId));
-        post.channelId = Number(event.chatId);
-        post.channelName = channel.title;
+
+        if (event.message?.media) {
+            if (event.message.media.photo) {
+                const filename = await this.downloadPhoto(event.message);
+
+                if (!filename) {
+                    return;
+                }
+
+                const photo = new Photo();
+                photo.filename = filename;
+
+                await AppDataSource.manager.save(photo);
+    
+                if (!post.photos) {
+                    post.photos = [];
+                }
+
+                post.photos.push(photo);
+
+            } else if (event.message.media.video) {
+                const filename = await this.downloadVideo(event.message);
+
+                if (!filename) {
+                    return;
+                }
+
+                const video = new Video();
+                video.filename = filename;
+
+                await AppDataSource.manager.save(video);
+    
+                if (!post.videos) {
+                    post.videos = [];
+                }
+
+                post.videos.push(video);
+            }
+        }
+
         await AppDataSource.manager.save(post);
     };
 
-    async editedMessageHandler(event: EditedMessageEvent) {
-        let post = await AppDataSource.manager.findOneBy(Post, { channelId: Number(event.chatId), postId: Number(event.message.id) });
+    async editedMessageHandler(event: EditedMessageEvent): Promise<void>  {
+        const post = await AppDataSource.manager.findOneBy(Post, { chatId: Number(event.chatId), postId: Number(event.message.id) });
 
         if (!post) {
-            post = new Post();
-
-            const channel = await this.getChannel(Number(event.chatId));
-            post.channelId = Number(event.chatId);
-            post.channelName = channel.title;
-
-            post.postId = Number(event.message.id);
-
-            const date = new Date();
-            date.setTime(event.message.date * 1000);
-            post.postDate = date;
+            return;
         }
 
         post.text = event.message.text;
@@ -81,14 +119,14 @@ class Crawler {
         await AppDataSource.manager.save(post);
     }
 
-    async deletedMessageHandler(event: DeletedMessageEvent) {
-        const channelId = event.originalUpdate.channelId; 
+    async deletedMessageHandler(event: DeletedMessageEvent): Promise<void> {
+        const chatId = Number(event.chatId);
         for (const postId of event.deletedIds) {
-            await AppDataSource.manager.delete(Post, { channelId, postId });
+            await AppDataSource.manager.delete(Post, { chatId, postId });
         }
     }
 
-    async start() {
+    async start(): Promise<void> {
         await this.client.connect();
 
         if (!await this.client.checkAuthorization()) {
@@ -109,15 +147,37 @@ class Crawler {
         }
     }
 
-    async downloadMedia(media) {
+    async downloadMedia(media: Api.TypeMessageMedia): Promise<string | Buffer | undefined> {
         const buffer = await this.client.downloadMedia(media, {
             workers: 1,
         });
         return buffer
     }
 
-    async getChannel(channelId: number) {
-        const channel = await AppDataSource.manager.findOneBy(Channel, { channelId });
+    async downloadPhoto(message: Api.Message): Promise<string | null> {
+        try {
+            const media = await this.downloadMedia(message.media);
+            const filename = path.join(__dirname, '../media', `photo_${message.date}_${message.id}.png`);
+            fs.writeFileSync(filename, media);
+            return filename;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    async downloadVideo(message: Api.Message): Promise<string | null> {
+        try {
+            const media = await this.downloadMedia(message.media);
+            const filename = path.join(__dirname, '../media', `video_${message.date}_${message.id}.mp4`);
+            fs.writeFileSync(filename, media);
+            return filename;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    async getChannel(channelId: number): Promise<Channel | null> {
+        const channel = await AppDataSource.manager.findOneBy(Channel, { channelId: channelId });
 
         if (channel) {
             return channel;
@@ -133,9 +193,19 @@ class Crawler {
         newChannel.channelId = channelId;
         newChannel.title = info.chats[0].title;
         newChannel.username = info.chats[0].username;
-        await AppDataSource.manager.save(newChannel);
 
-        return newChannel
+        try {
+            await AppDataSource.manager.save(newChannel);
+        } catch (error: any) {
+            if (error.code === 'ER_DUP_ENTRY') {
+                // Ignore duplicating records
+            } else {
+                console.error('Error while saving channel:', error);
+            }
+            return null;
+        }
+
+        return newChannel;
     }
 }
 

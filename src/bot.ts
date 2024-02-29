@@ -23,10 +23,7 @@ bot.start(async (ctx) => {
     ctx.reply("Welcome");
 });
 
-bot.help((ctx) => ctx.reply("Send me a sticker"))
-bot.on(message("sticker"), (ctx) => ctx.reply("👍"))
 bot.on(message("text"), (ctx) => ctx.reply("Hello World"));
-bot.hears("hi", (ctx) => ctx.reply("Hey there"))
 
 
 process.once("SIGINT", () => bot.stop("SIGINT"));

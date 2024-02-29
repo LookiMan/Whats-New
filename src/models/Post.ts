@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm";
 
+import { Channel } from "./Channel"
 import { Photo } from "./Photo"
 import { Video } from "./Video"
 
@@ -12,30 +13,31 @@ export class Post {
     @Column({ nullable: true, type: "text" })
     text: string;
 
-    @Column({ type: "bigint", nullable: true })
+    @Column()
+    postDate: Date;
+
+    @Column({ type: "bigint" })
     postId: number;
 
     @Column({ nullable: true })
     postLink: string;
 
-    @Column({ nullable: true })
-    postDate: Date;
+    @Column({ type: "bigint" })
+    chatId: number;
 
-    @Column({ type: "bigint", nullable: true })
-    channelId: number;
+    @Column({ type: "bigint" })
+    groupedId: number;
 
-    @Column({ nullable: true })
-    channelName: string;
+    @ManyToOne(() => Channel, channel => channel.posts)
+    channel?: Channel;
 
     @Column("json", { nullable: true })
     entities: any;
 
-    @ManyToMany(() => Photo)
-    @JoinTable()
+    @OneToMany(() => Photo, (photo) => photo.post)
     photos?: Photo[];
 
-    @ManyToMany(() => Video)
-    @JoinTable()
+    @OneToMany(() => Video, (video) => video.post)
     videos?: Video[];
 
     @Column({ type: "bigint", default: 0 })

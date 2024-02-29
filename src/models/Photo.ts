@@ -1,4 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, CreateDateColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, CreateDateColumn, Column, ManyToOne } from "typeorm";
+
+import { Post } from "./Post";
 
 
 @Entity()
@@ -11,4 +13,7 @@ export class Photo {
 
     @CreateDateColumn({ type: "timestamp" })
     created_at!: Date;
+
+    @ManyToOne(() => Post, (post) => post.photos)
+    post: Post
 }
