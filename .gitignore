@@ -4,6 +4,10 @@
 # Telegram session
 session
 
+# Vertex AI credentials
+creds/*
+!creds/.gitkeep
+
 # Media content
 media/*
 !media/.gitkeep

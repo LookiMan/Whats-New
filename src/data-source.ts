@@ -1,13 +1,13 @@
-import 'reflect-metadata'
-import { DataSource } from 'typeorm'
+import "reflect-metadata";
+import { DataSource } from "typeorm";
 
-import { Channel } from './models/Channel'
-import { User } from './models/User'
-import { Post } from './models/Post'
-import { Photo } from './models/Photo'
-import { Video } from './models/Video'
+import { Channel } from "./models/Channel";
+import { Post } from "./models/Post";
+import { Summary } from "./models/Summary";
+import { User } from "./models/User";
+import { SummarySubscriber } from "./subscribers";
 
-import config from './config'
+import config from "./config";
 
 
 export const AppDataSource = new DataSource({
@@ -18,8 +18,8 @@ export const AppDataSource = new DataSource({
     password: config.db.pass,
     database: config.db.name,
     synchronize: true,
-    logging: true,
-    entities: [User, Post, Photo, Video, Channel],
-    subscribers: [],
+    logging: config.debug,
+    entities: [Channel, Post, Summary, User],
+    subscribers: [SummarySubscriber],
     migrations: [],
 })

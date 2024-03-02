@@ -4,6 +4,8 @@ import { Crawler } from "./crawler";
 
 import config from "./config";
 
+import "./cron"; // Initialize cron
+
 
 AppDataSource.initialize().then(async () => {
     const crawler = new Crawler(

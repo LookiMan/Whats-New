@@ -1,8 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm";
+import "reflect-metadata";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
 
-import { Channel } from "./Channel"
-import { Photo } from "./Photo"
-import { Video } from "./Video"
+import { Channel } from "./Channel";
 
 
 @Entity()
@@ -34,12 +33,6 @@ export class Post {
     @Column("json", { nullable: true })
     entities: any;
 
-    @OneToMany(() => Photo, (photo) => photo.post)
-    photos?: Photo[];
-
-    @OneToMany(() => Video, (video) => video.post)
-    videos?: Video[];
-
     @Column({ type: "bigint", default: 0 })
     views?: number;
 
@@ -49,4 +42,3 @@ export class Post {
     @Column("json", { nullable: true })
     reactions?: any;
 }
-
