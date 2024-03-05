@@ -4,12 +4,12 @@ import { NewMessage, NewMessageEvent } from "telegram/events/NewMessage";
 import { EditedMessage, EditedMessageEvent } from "telegram/events/EditedMessage";
 import { DeletedMessage, DeletedMessageEvent } from "telegram/events/DeletedMessage";
 
-import { AppDataSource } from "./data-source";
+import { db } from "./data-source";
 import { Channel } from "./models/Channel";
 import { Post } from "./models/Post";
 
-const QRCode = require('qrcode');
-const fs = require('fs');
+const QRCode = require("qrcode");
+const fs = require("fs");
 
 
 class Crawler {
@@ -23,26 +23,29 @@ class Crawler {
         this.apiId = apiId;
         this.apiHash = apiHash;
 
-        const sessionData = fs.existsSync('session') ? fs.readFileSync('session').toString() : '' 
-        this.session = new StringSession(sessionData)
+        const sessionData = fs.existsSync("session") ? fs.readFileSync("session").toString() : "";
+        this.session = new StringSession(sessionData);
       
         this.client = new TelegramClient(this.session, apiId, apiHash, {
             useWSS: true,
-        })
+        });
 
-        this.client.addEventHandler(this.newMessageHandler.bind(this), new NewMessage({}))
-        this.client.addEventHandler(this.editedMessageHandler.bind(this), new EditedMessage({}))
-        this.client.addEventHandler(this.deletedMessageHandler.bind(this), new DeletedMessage({}))
+        this.client.addEventHandler(this.newMessageHandler.bind(this), new NewMessage({}));
+        this.client.addEventHandler(this.editedMessageHandler.bind(this), new EditedMessage({}));
+        this.client.addEventHandler(this.deletedMessageHandler.bind(this), new DeletedMessage({}));
     }
 
     saveSession(session: Session): void {
-        fs.writeFileSync('session', session.save());
+        fs.writeFileSync("session", session.save());
     }
 
-    async newMessageHandler(event: NewMessageEvent): Promise<void> { 
+    async newMessageHandler(event: NewMessageEvent): Promise<void> {
+        if (event.message?.chat?.className !== "Channel") {
+            return;
+        }
+
         const post = new Post();
         post.text = event.message.text;
-        post.entities = event.message.entities;
         
         post.chatId = Number(event.chatId);
         post.groupedId = Number(event.message.groupedId);
@@ -58,12 +61,16 @@ class Crawler {
         date.setTime(event.message.date * 1000);
         post.postDate = date;
 
-        await AppDataSource.manager.save(post);
+        await db.manager.save(post);
     };
 
-    async editedMessageHandler(event: EditedMessageEvent): Promise<void>  {
+    async editedMessageHandler(event: EditedMessageEvent): Promise<void> {
+        if (event.message?.chat?.className !== "Channel") {
+            return;
+        }
+
         const query = { chatId: Number(event.chatId), postId: Number(event.message.id) };
-        const post = await AppDataSource.manager.findOneBy(Post, query);
+        const post = await db.manager.findOneBy(Post, query);
 
         if (!post) {
             return;
@@ -74,13 +81,17 @@ class Crawler {
         post.forwards = event.message.forwards;
         post.reactions = event.message.reactions?.results;
 
-        await AppDataSource.manager.save(post);
+        await db.manager.save(post);
     }
 
     async deletedMessageHandler(event: DeletedMessageEvent): Promise<void> {
+        if (event?.peer?.className != "PeerChannel") {
+            return;
+        }
+
         const chatId = Number(event.chatId);
         for (const postId of event.deletedIds) {
-            await AppDataSource.manager.delete(Post, { chatId, postId });
+            await db.manager.delete(Post, { chatId, postId });
         }
     }
 
@@ -90,7 +101,7 @@ class Crawler {
         if (!await this.client.checkAuthorization()) {
             await this.client.signInUserWithQrCode({ apiId: this.apiId, apiHash: this.apiHash }, {
                 qrCode: async (code) => {
-                    console.log('Scan QR code to login');
+                    console.log("Scan QR code to login");
                     QRCode.toString(`tg://login?token=${code.token.toString("base64url")}`)
                     .then((url: string) => {
                         console.log(url)
@@ -106,7 +117,7 @@ class Crawler {
     }
 
     async getChannel(channelId: number): Promise<Channel | null> {
-        const channel = await AppDataSource.manager.findOneBy(Channel, { channelId: channelId });
+        const channel = await db.manager.findOneBy(Channel, { channelId: channelId });
 
         if (channel) {
             return channel;
@@ -124,12 +135,12 @@ class Crawler {
         newChannel.username = info.chats[0].username;
 
         try {
-            await AppDataSource.manager.save(newChannel);
+            await db.manager.save(newChannel);
         } catch (error: any) {
-            if (error.code === 'ER_DUP_ENTRY') {
+            if (error.code === "ER_DUP_ENTRY") {
                 // Ignore duplicating records
             } else {
-                console.error('Error while saving channel:', error);
+                console.error("Error while saving channel:", error);
             }
             return null;
         }

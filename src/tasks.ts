@@ -2,26 +2,26 @@ import { Between } from "typeorm"
 import { Not } from "typeorm";
 import { IsNull } from "typeorm"
 
-import { AppDataSource } from "./data-source";
+import { bot } from "./bot";
+import { db } from "./data-source";
 import { Post } from "./models/Post";
 import { Summary } from "./models/Summary";
+import { SummaryChunk } from "./models/SummaryChunk";
+import { SummaryTheme } from "./models/SummaryTheme";
 import { User } from "./models/User";
 import { generateSummary } from "./summary";
-import { bot } from "./bot";
-
-
-const moment = require("moment");
+import { formatDate } from "./utils";
 
 
 async function createSummaryPostTask(startDate: Date, endDate: Date): Promise<void> {
-    const posts = await AppDataSource.getRepository(Post).find({
+    const posts = await db.getRepository(Post).find({
         select: {
             'text': true
         },
         where: {
             postDate: Between(
-                moment(startDate).format("YYYY-MM-DD hh:mm:ss"),
-                moment(endDate).format("YYYY-MM-DD hh:mm:ss"),
+                formatDate(startDate),
+                formatDate(endDate),
             ),
             text: Not(IsNull()),
         },
@@ -30,12 +30,37 @@ async function createSummaryPostTask(startDate: Date, endDate: Date): Promise<vo
     const summary = new Summary();
 
     if (posts) {
-        summary.text = await generateSummary(posts);
+        summary.rawText = await generateSummary(posts);
+        
+        for (const chunkText of summary.rawText.split(':DELIMITER:')) {
+            const chunk = new SummaryChunk(chunkText.trim());
+            const match = chunk.text.match(/<b>(.*?)<\/b>/);
+            const label = match ? match[1].replace(":", "") : "Інші";
+            const theme = await db.manager.findOneBy(SummaryTheme, { label });
+
+            if (theme) {
+                chunk.theme = theme;
+            } else {
+                const theme = new SummaryTheme(label);
+                await db.manager.save(theme);
+                chunk.theme = theme;
+            }
+
+            await db.manager.save(chunk);
+
+            if (!summary.chunks) {
+                summary.chunks = [chunk];
+            } else {
+                summary.chunks.push(chunk);
+            }
+        }
+
     } else {
-        summary.text = "Поки не відбулося жодних новин🙄";
+        summary.rawText = "Поки не відбулося жодних новин🙄";
+        summary.chunks = [];
     }
 
-    await AppDataSource.manager.save(summary);
+    await db.manager.save(summary);
 }
 
 
@@ -85,7 +110,12 @@ export async function createEveningSummaryPostTask(): Promise<void> {
 
 
 export async function sendSummaryPostTask(): Promise<void> {
-    const summary = await AppDataSource.getRepository(Summary).findOne({
+    const summary = await db.getRepository(Summary).findOne({
+        relations: {
+            chunks: {
+                theme: true,
+            },
+        },
         where: {
             isApproved: true,
             isSubmitted: false,
@@ -96,21 +126,41 @@ export async function sendSummaryPostTask(): Promise<void> {
         return;
     }
 
+    if (!summary.chunks) {
+        // TODO: Send warning notification to administrators
+        return;
+    }
+
     summary.isSubmitted = true;
 
-    await AppDataSource.manager.save(summary);
+    await db.manager.save(summary);
 
-    const users = await AppDataSource.getRepository(User).find({
+    const users = await db.getRepository(User).find({
         select: {
             'userId': true
         },
     });
 
     for (const user of users) {
-        try {
-            bot.telegram.sendMessage(user.userId, summary.text, { parse_mode: "Markdown" });
-        } catch (error: any) {
-            // TODO: process sending error
+        for (const index in summary.chunks) {
+            const chunk = summary.chunks[index];
+            try {
+                bot.telegram.sendMessage(user.userId, chunk.text, {
+                    parse_mode: "HTML",
+                    disable_notification: index != summary.chunks.length,
+                    reply_markup: {
+                        inline_keyboard: [
+                            [
+                                { text: "👍", callback_data: `reaction:like-${chunk.theme.id}` },
+                                { text: "👎", callback_data: `reaction:dislike-${chunk.theme.id}` }
+                            ]
+                        ]
+                    }
+                });
+            } catch (error: any) {
+                console.log(error);
+                // TODO: process sending error
+            }
         }
     }
 }

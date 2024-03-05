@@ -13,8 +13,8 @@ export class SummarySubscriber implements EntitySubscriberInterface<Summary> {
     }
 
     afterInsert(event: InsertEvent<Summary>) {
-        bot.telegram.sendMessage(config.telegram_channel.id, event.entity.text, {
-            parse_mode: "Markdown",
+        bot.telegram.sendMessage(config.telegram_channel.id, event.entity.rawText, {
+            parse_mode: "HTML",
             reply_markup: {
                 inline_keyboard: [
                     [{ text: "Підтвердити публікацію", callback_data: `approve:${event.entity.id}` }]

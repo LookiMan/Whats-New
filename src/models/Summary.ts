@@ -1,5 +1,7 @@
 import "reflect-metadata";
-import { Entity, PrimaryGeneratedColumn, CreateDateColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, CreateDateColumn, Column, OneToMany } from "typeorm";
+
+import { SummaryChunk } from "./SummaryChunk";
 
 
 @Entity()
@@ -8,7 +10,10 @@ export class Summary {
     id: number;
 
     @Column({ nullable: true, type: "text" })
-    text: string;
+    rawText: string;
+
+    @OneToMany(() => SummaryChunk, chunk => chunk.summary)
+    chunks?: SummaryChunk[];
 
     @Column({ type: "boolean", default: false })
     isApproved: boolean;

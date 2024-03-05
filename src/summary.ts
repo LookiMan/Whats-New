@@ -3,20 +3,6 @@ const { VertexAI } = require("@google-cloud/vertexai");
 import config from "./config";
 
 
-const vertex_ai = new VertexAI({project: config.vertex_ai.project, location: config.vertex_ai.location});
-
-
-const generativeModel = vertex_ai.preview.getGenerativeModel({
-    model: config.vertex_ai.model,
-    generation_config: {
-        "max_output_tokens": 2048,
-        "temperature": 0.4,
-        "top_p": 1,
-        "top_k": 32
-    },
-});
-
-
 function delay(seconds: number) {
     return new Promise( resolve => setTimeout(resolve, seconds * 1000) );
 }
@@ -49,38 +35,31 @@ function groupPosts(posts: object, maxBlockSize: number): string[] {
 
 
 async function generateSummary(posts: object): Promise<string> {
-    const CONTINUE_CODE = "100"; 
+    const vertex_ai = new VertexAI({project: config.vertex_ai.project, location: config.vertex_ai.location});
 
-    const prompt = `Зараз я почну тобі передавати новини які тобі потрібно запам'ятовувати і у відповідь присилати '${CONTINUE_CODE}', як ти мене зрозумів, то просто пришли у відповідь '${CONTINUE_CODE}'`;
-
-    for (let i = 0; i < 3; i++) {
-        const resp = await generativeModel.generateContent({
-            contents: [{role: "user", parts: [{text: prompt}]}],
-        });
-
-        if (resp.response.candidates[0]?.content?.parts[0]?.text == CONTINUE_CODE) {
-            break;
-        } else {
-            await delay(15);
-        }
-    }
-
-    const groups = groupPosts(posts, 4096);
-
-    for (const group of groups) {
-        await generativeModel.generateContent({
-            contents: [{role: "user", parts: [{text: group}]}],
-        });
-        await delay(5);
-    }
-
-    const summaryPrompt = "А тепер дай короткий підсумок самих повторюваних новин згрупованих по темах. При цьому, звіт повинен бути тільки української мовою, не містити реклами та нецензурної лексики. Для форматування списку використовуй символ '-'";
-
-    const summary = await generativeModel.generateContent({
-        contents: [{role: "user", parts: [{text: summaryPrompt}]}],
+    const generativeModel = vertex_ai.preview.getGenerativeModel({
+        model: config.vertex_ai.model,
+        generation_config: {
+            "max_output_tokens": 4096,
+            "temperature": 0.9,
+            "top_p": 1,
+            "top_k": 32
+        },
     });
 
-    return await summary.response.candidates[0]?.content?.parts[0]?.text;
+    const chat = generativeModel.startChat();
+    await chat.sendMessage("Зараз я почну передавати новини які тобі потрібно запам'ятовувати а тоді треба буде підвести підсумки");
+    await delay(5);
+
+    const groups = groupPosts(posts, 4096);
+    for (const group of groups) {
+        await chat.sendMessage(group);
+        await delay(15);
+    }
+
+    const summary = await chat.sendMessage("Завдання: Відбери теми найчастіше згадуваних новин і розкажи про них, використовуючи надану інформацію. Напиши мінімум декілька речень про кожну новину та згрупуй їх за темами. Умови: Звіт повинен бути тільки українською мовою, не містити реклами чи інформацію схожу на неї та нецензурну лексику. Для форматування списку використовуйте символ '-' замість не нумерованого списку. Теми оберни в теги '<b></b>' замість '** **'. Кожен блок новин розділяй спеціальною міткою ':DELIMITER:' перед кожним блоком (але в початку відповіді він не потрібен). Не додавай блок 'Детальніше про деякі новини', краще додай цю інформацію до самих новин.");
+
+    return summary.response.candidates[0].content.parts[0].text;
 };
 
 

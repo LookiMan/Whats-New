@@ -30,9 +30,6 @@ export class Post {
     @ManyToOne(() => Channel, channel => channel.posts)
     channel?: Channel;
 
-    @Column("json", { nullable: true })
-    entities: any;
-
     @Column({ type: "bigint", default: 0 })
     views?: number;
 
