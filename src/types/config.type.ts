@@ -1,5 +1,8 @@
+type DBType = "mysql";
+
+
 interface DbConfig {
-	type: string;
+	type: DBType;
 	name: string;
 	root: string;
 	pass: string;

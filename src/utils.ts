@@ -1,5 +1,5 @@
 
-export function formatDate(date: Date): string {
+export function formatDate(date: Date): Date {
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDate();
@@ -7,5 +7,5 @@ export function formatDate(date: Date): string {
     const minutes = date.getMinutes();
     const seconds = date.getSeconds();
 
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    return new Date(`${year}-${month}-${day} ${hours}:${minutes}:${seconds}.000Z`);
 }

@@ -1,4 +1,5 @@
 import "reflect-metadata";
+
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
 
 import { Channel } from "./Channel";
@@ -7,28 +8,28 @@ import { Channel } from "./Channel";
 @Entity()
 export class Post {
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Column({ nullable: true, type: "text" })
-    text: string;
+    text: string = "";
 
-    @Column()
-    postDate: Date;
+    @Column({ default: () => "CURRENT_TIMESTAMP", type: "timestamp" })
+    postDate!: Date;
 
     @Column({ type: "bigint" })
-    postId: number;
+    postId: number = 0;
 
     @Column({ nullable: true })
-    postLink: string;
+    postLink: string = "";
 
     @Column({ type: "bigint" })
-    chatId: number;
+    chatId: number = 0;
 
     @Column({ type: "bigint" })
-    groupedId: number;
+    groupedId: number = 0;
 
     @ManyToOne(() => Channel, channel => channel.posts)
-    channel?: Channel;
+    channel!: Channel;
 
     @Column({ type: "bigint", default: 0 })
     views?: number;

@@ -1,17 +1,20 @@
 import "reflect-metadata";
-import { Entity, PrimaryGeneratedColumn, CreateDateColumn, Column } from "typeorm";
+
+import { Entity, PrimaryGeneratedColumn, CreateDateColumn, Column, OneToMany } from "typeorm";
+
+import { SummaryReaction } from "./SummaryReaction"; 
 
 
 @Entity()
 export class User {
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Column({ type: "bigint" })
-    userId: number;
+    userId!: number;
 
     @Column()
-    firstName: string;
+    firstName!: string;
 
     @Column({ nullable: true })
     lastName!: string;
@@ -19,6 +22,17 @@ export class User {
     @Column({ nullable: true })
     username!: string;
 
+    @OneToMany(() => SummaryReaction, reaction => reaction.user)
+    reactions!: SummaryReaction[];
+
     @CreateDateColumn({ type: "timestamp" })
     created_at!: Date;
+
+    constructor(userId: number, firstName: string, lastName?: string, username?: string, created_at?: Date) {
+        this.userId = userId;
+        this.firstName = firstName;
+        this.lastName = lastName || "";
+        this.username = username || "";
+        this.created_at = created_at || new Date();
+    }
 }

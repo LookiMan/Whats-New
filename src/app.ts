@@ -1,13 +1,13 @@
 import { bot } from "./bot";
-import { db } from "./data-source";
 import { Crawler } from "./crawler";
 
+import dataSource from "./data-source";
 import config from "./config";
 
 import "./cron"; // Initialize cron
 
 
-db.initialize().then(async () => {
+dataSource.initialize().then(async () => {
     const crawler = new Crawler(
         config.telegram_account.app_id,
         config.telegram_account.hash,
@@ -17,4 +17,4 @@ db.initialize().then(async () => {
 
     bot.launch();
 
-}).catch((error) => console.log(error));
+}).catch((error: Error) => console.log(error));

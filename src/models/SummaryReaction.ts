@@ -1,4 +1,5 @@
 import "reflect-metadata";
+
 import { Entity, PrimaryGeneratedColumn, CreateDateColumn, Column, ManyToOne } from "typeorm";
 
 import { SummaryTheme } from "./SummaryTheme";
@@ -10,19 +11,19 @@ type ReactionStatusType = "like" | "dislike";
 @Entity()
 export class SummaryReaction {
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
-    @ManyToOne(() => User, user => user.reaction)
+    @ManyToOne(() => User, user => user.reactions)
     user: User;
 
-    @ManyToOne(() => SummaryTheme, theme => theme.reaction)
-    theme: SummaryTheme;
+    @ManyToOne(() => SummaryTheme, theme => theme.reactions)
+    theme!: SummaryTheme;
 
     @Column({type: "enum", enum: ["like", "dislike"]})
     status: ReactionStatusType;
 
     @CreateDateColumn({ type: "timestamp" })
-    createdAt: Date;
+    createdAt!: Date;
 
     constructor(user: User, theme: SummaryTheme, status: ReactionStatusType) {
         this.user = user;

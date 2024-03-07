@@ -1,4 +1,5 @@
 import "reflect-metadata";
+
 import { Entity, PrimaryGeneratedColumn, CreateDateColumn, Column, ManyToOne } from "typeorm";
 
 import { Summary } from "./Summary";
@@ -8,16 +9,16 @@ import { SummaryTheme } from "./SummaryTheme";
 @Entity()
 export class SummaryChunk {
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Column({ nullable: true, type: "text" })
-    text: string;
+    text: string = "";
 
     @ManyToOne(() => Summary, summary => summary.chunks)
-    summary?: Summary;
+    summary!: Summary;
 
     @ManyToOne(() => SummaryTheme, theme => theme.chunk)
-    theme?: SummaryTheme;
+    theme!: SummaryTheme;
 
     @CreateDateColumn({ type: "timestamp" })
     created_at!: Date;

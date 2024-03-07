@@ -1,4 +1,5 @@
 import "reflect-metadata";
+
 import { Entity, PrimaryGeneratedColumn, CreateDateColumn, Column, OneToMany } from "typeorm";
 
 import { Post } from "./Post";
@@ -7,7 +8,7 @@ import { Post } from "./Post";
 @Entity()
 export class Channel {
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Column({ type: "bigint", unique: true })
     channelId: number;
@@ -19,8 +20,14 @@ export class Channel {
     username!: string;
 
     @OneToMany(() => Post, post => post.channel)
-    posts: Post[];
+    posts!: Post[];
 
     @CreateDateColumn({ type: "timestamp" })
     created_at!: Date;
+
+    constructor(channelId: number, title: string, username: string | undefined) {
+        this.channelId = channelId;
+        this.title = title;
+        this.username = username || "";
+    }
 }

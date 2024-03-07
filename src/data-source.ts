@@ -1,28 +1,25 @@
 import "reflect-metadata";
-import { DataSource } from "typeorm";
 
-import { Channel } from "./models/Channel";
-import { Post } from "./models/Post";
-import { Summary } from "./models/Summary";
-import { SummaryChunk } from "./models/SummaryChunk";
-import { SummaryTheme } from "./models/SummaryTheme";
-import { SummaryReaction } from "./models/SummaryReaction";
-import { User } from "./models/User";
-import { SummarySubscriber } from "./subscribers";
+import { DataSource } from "typeorm";
+import { DataSourceOptions } from "typeorm";
 
 import config from "./config";
 
 
-export const db = new DataSource({
+const connectionOptions: DataSourceOptions = {
     type: config.db.type,
     host: config.db.host,
     port: config.db.port,
     username: config.db.user,
     password: config.db.pass,
     database: config.db.name,
-    synchronize: true,
+    synchronize: false,
     logging: config.debug,
-    entities: [Channel, Post, Summary, SummaryChunk, SummaryTheme, SummaryReaction, User],
-    subscribers: [SummarySubscriber],
-    migrations: [],
-})
+    entities: [__dirname + "/models/*.{js,ts}"],
+    migrations: [__dirname + "/migrations/*.{js,ts}"],
+    subscribers: [__dirname + "/subscribers.{js,ts}"],
+};
+
+
+const dataSource = new DataSource(connectionOptions)
+export default dataSource

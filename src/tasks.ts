@@ -1,9 +1,8 @@
 import { Between } from "typeorm"
 import { Not } from "typeorm";
-import { IsNull } from "typeorm"
+import { IsNull } from "typeorm";
 
 import { bot } from "./bot";
-import { db } from "./data-source";
 import { Post } from "./models/Post";
 import { Summary } from "./models/Summary";
 import { SummaryChunk } from "./models/SummaryChunk";
@@ -12,19 +11,18 @@ import { User } from "./models/User";
 import { generateSummary } from "./summary";
 import { formatDate } from "./utils";
 
+import dataSource from "./data-source";
+
 
 async function createSummaryPostTask(startDate: Date, endDate: Date): Promise<void> {
-    const posts = await db.getRepository(Post).find({
+    const posts = await dataSource.getRepository(Post).find({
         select: {
             'text': true
         },
         where: {
-            postDate: Between(
-                formatDate(startDate),
-                formatDate(endDate),
-            ),
+            postDate: Between(formatDate(startDate), formatDate(endDate)),
             text: Not(IsNull()),
-        },
+        }
     });
 
     const summary = new Summary();
@@ -36,17 +34,17 @@ async function createSummaryPostTask(startDate: Date, endDate: Date): Promise<vo
             const chunk = new SummaryChunk(chunkText.trim());
             const match = chunk.text.match(/<b>(.*?)<\/b>/);
             const label = match ? match[1].replace(":", "") : "Інші";
-            const theme = await db.manager.findOneBy(SummaryTheme, { label });
+            const theme = await dataSource.manager.findOneBy(SummaryTheme, { label });
 
             if (theme) {
                 chunk.theme = theme;
             } else {
                 const theme = new SummaryTheme(label);
-                await db.manager.save(theme);
+                await dataSource.manager.save(theme);
                 chunk.theme = theme;
             }
 
-            await db.manager.save(chunk);
+            await dataSource.manager.save(chunk);
 
             if (!summary.chunks) {
                 summary.chunks = [chunk];
@@ -60,7 +58,7 @@ async function createSummaryPostTask(startDate: Date, endDate: Date): Promise<vo
         summary.chunks = [];
     }
 
-    await db.manager.save(summary);
+    await dataSource.manager.save(summary);
 }
 
 
@@ -110,7 +108,7 @@ export async function createEveningSummaryPostTask(): Promise<void> {
 
 
 export async function sendSummaryPostTask(): Promise<void> {
-    const summary = await db.getRepository(Summary).findOne({
+    const summary = await dataSource.getRepository(Summary).findOne({
         relations: {
             chunks: {
                 theme: true,
@@ -133,29 +131,30 @@ export async function sendSummaryPostTask(): Promise<void> {
 
     summary.isSubmitted = true;
 
-    await db.manager.save(summary);
+    await dataSource.manager.save(summary);
 
-    const users = await db.getRepository(User).find({
+    const users = await dataSource.getRepository(User).find({
         select: {
             'userId': true
         },
     });
 
     for (const user of users) {
-        for (const index in summary.chunks) {
-            const chunk = summary.chunks[index];
+        for (const [index, chunk] of summary.chunks.entries()) {
             try {
+                const replyMarkup = chunk.theme ? {
+                    inline_keyboard: [
+                        [
+                            { text: "👍", callback_data: `reaction:like-${chunk.theme.id}` },
+                            { text: "👎", callback_data: `reaction:dislike-${chunk.theme.id}` }
+                        ]
+                    ]
+                } : undefined;
+
                 bot.telegram.sendMessage(user.userId, chunk.text, {
                     parse_mode: "HTML",
                     disable_notification: index != summary.chunks.length,
-                    reply_markup: {
-                        inline_keyboard: [
-                            [
-                                { text: "👍", callback_data: `reaction:like-${chunk.theme.id}` },
-                                { text: "👎", callback_data: `reaction:dislike-${chunk.theme.id}` }
-                            ]
-                        ]
-                    }
+                    reply_markup: replyMarkup,
                 });
             } catch (error: any) {
                 console.log(error);
