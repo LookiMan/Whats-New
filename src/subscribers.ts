@@ -13,13 +13,15 @@ export class SummarySubscriber implements EntitySubscriberInterface<Summary> {
     }
 
     afterInsert(event: InsertEvent<Summary>) {
+        const replyMarkup = event.entity.chunks ? {
+            inline_keyboard: [
+                [{ text: "Підтвердити публікацію", callback_data: `approve:${event.entity.id}` }]
+            ]
+        } : undefined;
+
         bot.telegram.sendMessage(config.telegram_channel.id, event.entity.rawText, {
             parse_mode: "HTML",
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: "Підтвердити публікацію", callback_data: `approve:${event.entity.id}` }]
-                ]
-            }
+            reply_markup: replyMarkup,
         });
     }
 }
