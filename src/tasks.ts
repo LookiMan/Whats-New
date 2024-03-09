@@ -145,7 +145,6 @@ export async function sendSummaryPostTask(): Promise<void> {
             try {
                 bot.telegram.sendMessage(user.userId, formatMessage(chunk.text), {
                     parse_mode: "HTML",
-                    disable_web_page_preview: true,
                     disable_notification: index !== summary.chunks.length - 1,
                 });
             } catch (error: any) {
