@@ -11,6 +11,6 @@ export function formatDate(date: Date): Date {
 }
 
 export function formatMessage(message: string): string {
-    message += "\n\n<a href='https://t.me/what_new_ua_bot'>Джерело: What's New Ukraine Bot</a>"; 
+    message += "\n\nДжерело: <a href='https://t.me/what_new_ua_bot'>What's New Ukraine Bot</a>"; 
     return message;
 }
