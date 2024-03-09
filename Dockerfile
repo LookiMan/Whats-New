@@ -1,4 +1,5 @@
 FROM node:latest
+USER root
 
 WORKDIR /usr/src/tele_feed/
 
