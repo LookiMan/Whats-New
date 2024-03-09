@@ -9,3 +9,8 @@ export function formatDate(date: Date): Date {
 
     return new Date(`${year}-${month}-${day} ${hours}:${minutes}:${seconds}.000Z`);
 }
+
+export function formatMessage(message: string): string {
+    message += "\n\n<a href='https://t.me/what_new_ua_bot'>Джерело: What's New Ukraine Bot</a>"; 
+    return message;
+}

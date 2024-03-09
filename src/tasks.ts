@@ -10,6 +10,7 @@ import { SummaryTheme } from "./models/SummaryTheme";
 import { User } from "./models/User";
 import { generateSummary } from "./summary";
 import { formatDate } from "./utils";
+import { formatMessage } from "./utils";
 
 import dataSource from "./data-source";
 
@@ -142,19 +143,10 @@ export async function sendSummaryPostTask(): Promise<void> {
     for (const user of users) {
         for (const [index, chunk] of summary.chunks.entries()) {
             try {
-                const replyMarkup = chunk.theme ? {
-                    inline_keyboard: [
-                        [
-                            { text: "👍", callback_data: `reaction:like-${chunk.theme.id}` },
-                            { text: "👎", callback_data: `reaction:dislike-${chunk.theme.id}` }
-                        ]
-                    ]
-                } : undefined;
-
-                bot.telegram.sendMessage(user.userId, chunk.text, {
+                bot.telegram.sendMessage(user.userId, formatMessage(chunk.text), {
                     parse_mode: "HTML",
-                    disable_notification: index != summary.chunks.length,
-                    reply_markup: replyMarkup,
+                    disable_notification: index !== summary.chunks.length - 1,
+                    disable_web_page_preview: true,
                 });
             } catch (error: any) {
                 console.log(error);
