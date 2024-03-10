@@ -2,6 +2,7 @@ import { EntitySubscriberInterface, EventSubscriber, InsertEvent } from "typeorm
 
 import { Summary } from "./models/Summary";
 import { bot } from "./bot"
+import { formatSummary } from "./utils";
 
 import config from "./config"
 
@@ -19,7 +20,7 @@ export class SummarySubscriber implements EntitySubscriberInterface<Summary> {
             ]
         } : undefined;
 
-        bot.telegram.sendMessage(config.telegram_channel.id, event.entity.rawText, {
+        bot.telegram.sendMessage(config.telegram_channel.id, formatSummary(event.entity.label, event.entity.rawText), {
             parse_mode: "HTML",
             reply_markup: replyMarkup,
         });

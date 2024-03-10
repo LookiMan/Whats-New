@@ -10,12 +10,12 @@ import { SummaryTheme } from "./models/SummaryTheme";
 import { User } from "./models/User";
 import { generateSummary } from "./summary";
 import { formatDate } from "./utils";
-import { formatMessage } from "./utils";
+import { formatSummary } from "./utils";
 
 import dataSource from "./data-source";
 
 
-async function createSummaryPostTask(startDate: Date, endDate: Date): Promise<void> {
+async function createSummaryPostTask(startDate: Date, endDate: Date, summaryLabel: string): Promise<void> {
     const posts = await dataSource.getRepository(Post).find({
         select: {
             'text': true
@@ -27,6 +27,7 @@ async function createSummaryPostTask(startDate: Date, endDate: Date): Promise<vo
     });
 
     const summary = new Summary();
+    summary.label = summaryLabel;
 
     if (posts) {
         summary.rawText = await generateSummary(posts);
@@ -64,47 +65,67 @@ async function createSummaryPostTask(startDate: Date, endDate: Date): Promise<vo
 
 
 export async function createNightlySummaryPostTask(): Promise<void> {
+    const START_HOUR = 21;
+    const END_HOUR = 9;
+
+    const label = `🌙 <i>Нічні новини за ${START_HOUR}:00 - ${END_HOUR}:00</i>`;
+
     const endDate = new Date();
-    endDate.setHours(9, 0, 0, 0);
+    endDate.setHours(END_HOUR, 0, 0, 0);
 
     const startDate = new Date(endDate);
     startDate.setDate(endDate.getDate() - 1);
-    startDate.setHours(21, 0, 0, 0);
+    startDate.setHours(START_HOUR, 0, 0, 0);
 
-    await createSummaryPostTask(startDate, endDate);
+    await createSummaryPostTask(startDate, endDate, label);
 }
 
 
 export async function createMorningSummaryPostTask(): Promise<void> {
+    const START_HOUR = 9;
+    const END_HOUR = 12;
+
+    const label =  `☕️ <i>Ранкові новини за ${START_HOUR}:00 - ${END_HOUR}:00</i>`;
+
     const startDate = new Date();
-    startDate.setHours(9, 0, 0, 0);
+    startDate.setHours(START_HOUR, 0, 0, 0);
 
     const endDate = new Date();
-    endDate.setHours(12, 0, 0, 0);
+    endDate.setHours(END_HOUR, 0, 0, 0);
 
-    await createSummaryPostTask(startDate, endDate);
+    await createSummaryPostTask(startDate, endDate, label);
 }
 
 
 export async function createLunchSummaryPostTask(): Promise<void> {
+    const START_HOUR = 12;
+    const END_HOUR = 15;
+
+    const label = `🍝 <i>Обідні новини за ${START_HOUR}:00 - ${END_HOUR}:00</i>`;
+
     const startDate = new Date();
-    startDate.setHours(12, 0, 0, 0);
+    startDate.setHours(START_HOUR, 0, 0, 0);
 
     const endDate = new Date();
-    endDate.setHours(15, 0, 0, 0);
+    endDate.setHours(END_HOUR, 0, 0, 0);
 
-    await createSummaryPostTask(startDate, endDate);
+    await createSummaryPostTask(startDate, endDate, label);
 }
 
 
 export async function createEveningSummaryPostTask(): Promise<void> {
+    const START_HOUR = 15;
+    const END_HOUR = 21;
+
+    const label = `🥱 <i>Вечірні новини за ${START_HOUR}:00 - ${END_HOUR}:00</i>`;
+
     const startDate = new Date();
-    startDate.setHours(15, 0, 0, 0);
+    startDate.setHours(START_HOUR, 0, 0, 0);
 
     const endDate = new Date();
-    endDate.setHours(21, 0, 0, 0);
+    endDate.setHours(END_HOUR, 0, 0, 0);
 
-    await createSummaryPostTask(startDate, endDate);
+    await createSummaryPostTask(startDate, endDate, label);
 }
 
 
@@ -140,10 +161,12 @@ export async function sendSummaryPostTask(): Promise<void> {
         },
     });
 
+    const label = summary.label;
+
     for (const user of users) {
         for (const [index, chunk] of summary.chunks.entries()) {
             try {
-                bot.telegram.sendMessage(user.userId, formatMessage(chunk.text), {
+                bot.telegram.sendMessage(user.userId, formatSummary(label, chunk.text), {
                     parse_mode: "HTML",
                     disable_notification: index !== summary.chunks.length - 1,
                 });

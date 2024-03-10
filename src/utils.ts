@@ -1,4 +1,5 @@
 
+
 export function formatDate(date: Date): Date {
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
@@ -10,7 +11,9 @@ export function formatDate(date: Date): Date {
     return new Date(`${year}-${month}-${day} ${hours}:${minutes}:${seconds}.000Z`);
 }
 
-export function formatMessage(message: string): string {
-    message += "\n\nДжерело: <a href='https://t.me/what_new_ua_bot'>What's New Ukraine Bot</a>"; 
-    return message;
+
+export function formatSummary(label: string, message: string): string {
+    const copyright = "Джерело: <a href='https://t.me/what_new_ua_bot'>What's New Ukraine Bot</a>";
+
+    return `${label}\n\n${message}\n\n${copyright}`;
 }

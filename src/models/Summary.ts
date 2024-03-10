@@ -10,6 +10,9 @@ export class Summary {
     @PrimaryGeneratedColumn()
     id!: number;
 
+    @Column({ nullable: true })
+    label: string = "";
+
     @Column({ nullable: true, type: "text" })
     rawText: string = "";
 

@@ -41,3 +41,21 @@
 **Up container:**
 
 `docker compose up -d`
+
+### PM2 commands:
+
+**Monitoring CPU/Usage of each process:**
+
+`docker compose exec app pm2 monit`
+
+**Listing managed processes:**
+
+`docker compose exec app pm2 list`
+
+**Get more information about a process:**
+
+`docker compose exec app pm2 show`
+
+**0sec downtime reload all applications:**
+
+`docker compose exec app pm2 reload all`

@@ -12,6 +12,7 @@ import dataSource from "./data-source";
 
 const bot = new Telegraf(config.telegram_bot.token);
 
+
 bot.start(async (ctx) => {
     let user = await dataSource.manager.findOneBy(User, { userId: ctx.from?.id });
 
@@ -28,9 +29,11 @@ bot.start(async (ctx) => {
     ctx.reply("Привіт 👋 Очікуй короткі підсумки новин кожен день о 9:00, 12:00, 15:00 та 21:00");
 });
 
+
 bot.on(message("text"), async (ctx) => {
     await ctx.reply("Очікуй короткі підсумки новин кожен день о 9:00, 12:00, 15:00 та 21:00")
 });
+
 
 bot.on("callback_query", async (ctx) => {
     // @ts-ignore: Property 'data' does not exist on type 'CallbackQuery'.
