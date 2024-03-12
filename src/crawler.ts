@@ -11,9 +11,8 @@ import { clearMessage } from "./utils";
 import dataSource from "./data-source";
 import Logger from "./logger";
 
-import * as fs from "fs";
 
-
+const fs = require("fs");
 const QRCode = require("qrcode");
 const logger = Logger.getInstance("crawler");
 
