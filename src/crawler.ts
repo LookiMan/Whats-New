@@ -6,19 +6,24 @@ import { DeletedMessage, DeletedMessageEvent } from "telegram/events/DeletedMess
 
 import { Channel } from "./models/Channel";
 import { Post } from "./models/Post";
+import { clearMessage } from "./utils"; 
 
 import dataSource from "./data-source";
+import Logger from "./logger";
+
+import * as fs from "fs";
+
 
 const QRCode = require("qrcode");
-const fs = require("fs");
+const logger = Logger.getInstance("crawler");
 
 
 class Crawler {
-    apiId: number;
-    apiHash: string;
+    private apiId: number;
+    private apiHash: string;
 
-    client: TelegramClient;
-    session: StringSession;
+    private client: TelegramClient;
+    private session: StringSession;
 
     constructor(apiId: number, apiHash: string) {
         this.apiId = apiId;
@@ -46,7 +51,7 @@ class Crawler {
         }
 
         const post = new Post();
-        post.text = event.message.text;
+        post.text = clearMessage(event.message.text);
         
         post.chatId = Number(event.chatId);
         post.groupedId = Number(event.message.groupedId);
@@ -80,7 +85,7 @@ class Crawler {
             return;
         }
 
-        post.text = event.message.text;
+        post.text = clearMessage(event.message.text);
         post.views = event.message.views;
         post.forwards = event.message.forwards;
         post.reactions = event.message.reactions?.results;
@@ -145,7 +150,7 @@ class Crawler {
             if (error.code === "ER_DUP_ENTRY") {
                 // Ignore duplicating records
             } else {
-                console.error("Error while saving channel:", error);
+                logger.error(`Error while saving channel: ${error}`);
             }
             return null;
         }

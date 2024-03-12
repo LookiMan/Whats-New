@@ -8,9 +8,11 @@ import { User } from "./models/User";
 
 import config from "./config";
 import dataSource from "./data-source";
+import Logger from "./logger";
 
 
 const bot = new Telegraf(config.telegram_bot.token);
+const logger = Logger.getInstance("bot");
 
 
 bot.start(async (ctx) => {
@@ -55,16 +57,24 @@ bot.on("callback_query", async (ctx) => {
         await dataSource.manager.save(summary);
 
         if (ctx.update.callback_query.message && ctx.update.callback_query.message.message_id) {
-            await bot.telegram.editMessageReplyMarkup(
-                config.telegram_channel.id,
-                ctx.update.callback_query.message.message_id,
-                ctx.update.callback_query.id,
-                {
-                    inline_keyboard: [
-                        [{ text: "Публікацію підтверджено ✅", callback_data: "approved" }]
-                    ]
+            try {
+                await bot.telegram.editMessageReplyMarkup(
+                    config.telegram_channel.id,
+                    ctx.update.callback_query.message.message_id,
+                    ctx.update.callback_query.id,
+                    {
+                        inline_keyboard: [
+                            [{ text: "Публікацію підтверджено ✅", callback_data: "approved" }]
+                        ]
+                    }
+                );
+            } catch (error: any) {
+                if (error.code === "ER_DUP_ENTRY") {
+                    await bot.telegram.answerCbQuery(ctx.update.callback_query.id, "⚠️ Публікацію вже підтверджено");
+                } else {
+                    logger.error(error);
                 }
-            );
+            }
         }
     } else if (action === "approved") {
         await bot.telegram.answerCbQuery(ctx.update.callback_query.id, "⚠️ Публікацію вже підтверджено");

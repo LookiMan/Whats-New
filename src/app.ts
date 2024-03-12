@@ -3,18 +3,25 @@ import { Crawler } from "./crawler";
 
 import dataSource from "./data-source";
 import config from "./config";
+import Logger from "./logger";
 
 import "./cron"; // Initialize cron
 
 
+const logger = Logger.getInstance("app");
+
+
 dataSource.initialize().then(async () => {
-    const crawler = new Crawler(
-        config.telegram_account.app_id,
-        config.telegram_account.hash,
-    )
+    try {
+        const crawler = new Crawler(
+            config.telegram_account.app_id,
+            config.telegram_account.hash,
+        );
 
-    await crawler.start();
+        await crawler.start();
+        await bot.launch();
+    } catch (error: any) {
+        logger.error(error);
+    }
 
-    bot.launch();
-
-}).catch((error: Error) => console.log(error));
+}).catch((error: Error) => logger.error(error));

@@ -11,11 +11,19 @@ import { User } from "./models/User";
 import { generateSummary } from "./summary";
 import { formatDate } from "./utils";
 import { formatSummary } from "./utils";
+import { sendAdminsNotification } from "./utils";
 
 import dataSource from "./data-source";
+import Logger from "./logger";
+
+
+const logger = Logger.getInstance("tasks");
 
 
 async function createSummaryPostTask(startDate: Date, endDate: Date, summaryLabel: string): Promise<void> {
+
+    sendAdminsNotification('Старт створення підсумків...');
+
     const posts = await dataSource.getRepository(Post).find({
         select: {
             'text': true
@@ -30,8 +38,14 @@ async function createSummaryPostTask(startDate: Date, endDate: Date, summaryLabe
     summary.label = summaryLabel;
 
     if (posts) {
-        summary.rawText = await generateSummary(posts);
-        
+        try {
+            summary.rawText = await generateSummary(posts);
+        } catch (error: any) {
+            logger.error(error);
+            sendAdminsNotification(`При створенні підсумків виникла помилка: <pre>${error}<pre>`);
+            return;
+        }
+
         for (const chunkText of summary.rawText.split(':DELIMITER:')) {
             const chunk = new SummaryChunk(chunkText.trim());
             const match = chunk.text.match(/<b>(.*?)<\/b>/);
@@ -146,8 +160,10 @@ export async function sendSummaryPostTask(): Promise<void> {
         return;
     }
 
+    const label = summary.label;
+
     if (!summary.chunks) {
-        // TODO: Send warning notification to administrators
+        sendAdminsNotification(`${label} - відсутні блоки новин для розсилки.\n\n⚠️ Розсилка неможлива`);
         return;
     }
 
@@ -161,8 +177,6 @@ export async function sendSummaryPostTask(): Promise<void> {
         },
     });
 
-    const label = summary.label;
-
     for (const user of users) {
         for (const [index, chunk] of summary.chunks.entries()) {
             try {
@@ -171,8 +185,7 @@ export async function sendSummaryPostTask(): Promise<void> {
                     disable_notification: index !== summary.chunks.length - 1,
                 });
             } catch (error: any) {
-                console.log(error);
-                // TODO: process sending error
+                logger.error(error);
             }
         }
     }

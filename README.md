@@ -42,6 +42,10 @@
 
 `docker compose up -d`
 
+**View logs:**
+
+`docker compose logs`
+
 ### PM2 commands:
 
 **Monitoring CPU/Usage of each process:**

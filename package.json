@@ -12,11 +12,11 @@
         "qrcode": "^1.5.3",
         "@types/node": "^20.11.19",
         "node-cron": "^3.0.3",
-        "@google-cloud/vertexai": "^0.5.0"
+        "@google-cloud/vertexai": "^0.5.0",
+        "winston": "^3.12.0"
     },
     "devDependencies": {
-        "prettier": "^2.5.1",
-        "ts-node-dev": "^2.0.0"
+        "prettier": "^2.5.1"
     },
     "scripts": {
         "start": "tsc --build && pm2-runtime start ecosystem.config.js",
