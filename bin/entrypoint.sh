@@ -2,10 +2,10 @@
 
 if [ $NODE_ENV = "development" ];
 then
-    yarn add --dev
+    yarn install --dev
     yarn run watch
 else
-    yarn add
+    yarn install
     yarn run migration:run
     yarn run start
 fi
