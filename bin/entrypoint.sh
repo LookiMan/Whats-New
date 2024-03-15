@@ -2,10 +2,10 @@
 
 if [ $NODE_ENV = "development" ];
 then
-    npm install
-    npm run watch
+    yarn add --dev
+    yarn run watch
 else
-    npm install --save-dev
-    npm run migration:run
-    npm run start
+    yarn add
+    yarn run migration:run
+    yarn run start
 fi

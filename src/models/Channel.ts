@@ -1,6 +1,6 @@
 import "reflect-metadata";
 
-import { Entity, PrimaryGeneratedColumn, CreateDateColumn, Column, OneToMany } from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn,  OneToMany } from "typeorm";
 
 import { Post } from "./Post";
 

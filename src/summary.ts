@@ -1,6 +1,7 @@
-import { Post } from './models/Post';
+import type { SummaryPost } from "./types/post.type";
 
 import config from "./config";
+
 
 const { VertexAI } = require("@google-cloud/vertexai");
 
@@ -10,7 +11,7 @@ function delay(seconds: number) {
 }
 
 
-function groupPosts(posts: Post[], maxBlockSize: number): string[] {
+function groupPosts(posts: SummaryPost[], maxBlockSize: number): string[] {
     let result: string[] = [];
     let currentBlock: string[] = [];
     let currentBlockSize = 0;
@@ -36,7 +37,7 @@ function groupPosts(posts: Post[], maxBlockSize: number): string[] {
 }
 
 
-async function generateSummary(posts: Post[]): Promise<string> {
+async function generateSummary(posts: SummaryPost[]): Promise<string> {
     const vertex_ai = new VertexAI({project: config.vertex_ai.project, location: config.vertex_ai.location});
 
     const generativeModel = vertex_ai.preview.getGenerativeModel({
@@ -56,12 +57,25 @@ async function generateSummary(posts: Post[]): Promise<string> {
     const groups = groupPosts(posts, 4096);
     for (const group of groups) {
         await chat.sendMessage(group);
-        await delay(5);
+        await delay(10);
     }
 
-    const summary = await chat.sendMessage("Завдання: Відбери теми найчастіше згадуваних новин з тих, що ти отримав (а не з інтернету) і розкажи про них, використовуючи надану інформацію. Напиши мінімум декілька речень про кожну новину та згрупуй їх за темами. Умови: Звіт повинен бути тільки українською мовою, не містити реклами чи інформацію схожу на неї та нецензурну лексику. Для форматування списку використовуйте символ '-' замість не нумерованого списку. Форматування: оберни теми новин в теги '<b> </b>' замість символів '** **' (при цьому не вказуй слово 'тема'. Тема це блок новин об'єднаний по сенсу). Між блоками новин (які виділяються тегами <b></b>) додавай спеціальною міткою з нового рядка ':DELIMITER:'. Не додавай блок 'Детальніше про деякі новини', краще додай цю інформацію до самих новин.");
+    const summary = await chat.sendMessage("Завдання: Відбери теми найчастіше згадуваних новин з тих, що ти отримав (а не з інтернету) і розкажи про них, використовуючи надану інформацію. Напиши мінімум декілька речень про кожну новину та згрупуй їх за темами. Умови: Звіт повинен бути тільки українською мовою, не містити реклами чи інформацію схожу на неї та нецензурну лексику. Для форматування списку використовуйте символ '-' замість не нумерованого списку. Не додавай блок 'Детальніше про деякі новини', 'Підсумки' чи інші висновки про новини.");
 
-    return summary.response.candidates[0].content.parts[0].text;
+    const response = await summary.response;
+
+    let text: string;
+    try {
+        text = response.candidates[0].content.parts[0].text;
+    } catch (error) {
+        if (error instanceof TypeError && error.message.includes("is not iterable")) {
+            text = response.candidates[0].content.parts.text;
+        } else {
+            throw error;
+        }
+    } 
+
+    return text;
 };
 
 

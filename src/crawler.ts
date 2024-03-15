@@ -84,7 +84,11 @@ class Crawler {
             return;
         }
 
-        post.text = clearMessage(event.message.text);
+        const newText = clearMessage(event.message.text);
+        if (newText != post.text) {
+            post.isEdited = true;
+        }
+        post.text = newText;
         post.views = event.message.views;
         post.forwards = event.message.forwards;
         post.reactions = event.message.reactions?.results;
@@ -99,7 +103,11 @@ class Crawler {
 
         const chatId = Number(event.chatId);
         for (const postId of event.deletedIds) {
-            await dataSource.manager.delete(Post, { chatId, postId });
+            const post = await dataSource.manager.findOneBy(Post, { chatId, postId });
+            if (post) {
+                post.isDeleted = true;
+                await dataSource.manager.save(post);
+            }
         }
     }
 

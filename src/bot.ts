@@ -1,10 +1,16 @@
+import { Context } from "telegraf";
 import { Telegraf } from "telegraf";
 import { message } from "telegraf/filters";
 
-import { Summary } from "./models/Summary";
-import { SummaryReaction } from "./models/SummaryReaction";
-import { SummaryTheme } from "./models/SummaryTheme";
+import { SummaryChunk } from "./models/SummaryChunk";
+import { SummaryChunkItem } from "./models/SummaryChunkItem";
 import { User } from "./models/User";
+
+import { createMessage } from "./utils";
+import { getNextHour } from "./utils";
+import { getTimeDiff } from "./utils";
+import { notifyAdmins } from "./utils";
+import { renderAdminSummaryChunkMessage } from "./utils";
 
 import config from "./config";
 import dataSource from "./data-source";
@@ -15,7 +21,11 @@ const bot = new Telegraf(config.telegram_bot.token);
 const logger = Logger.getInstance("bot");
 
 
-bot.start(async (ctx) => {
+bot.start(async (ctx: Context) => {
+    if (!ctx.from) {
+        return;
+    }
+
     let user = await dataSource.manager.findOneBy(User, { userId: ctx.from?.id });
 
     if (!user) {
@@ -27,86 +37,88 @@ bot.start(async (ctx) => {
         );
         await dataSource.manager.save(user);
     }
-    
-    ctx.reply("Привіт 👋 Очікуй короткі підсумки новин кожен день о 9:00, 12:00, 15:00 та 21:00");
+
+    ctx.reply(`Привіт ${ctx.from?.first_name} 👋 Очікуй короткі підсумки новин кожен день о 9:00, 12:00, 15:00 та 21:00`);
 });
 
 
-bot.on(message("text"), async (ctx) => {
-    await ctx.reply("Очікуй короткі підсумки новин кожен день о 9:00, 12:00, 15:00 та 21:00")
+bot.on(message("text"), async (ctx: Context) => {
+    const nextHour = getNextHour();
+    const timeDiff = getTimeDiff(nextHour);
+    const message = createMessage(timeDiff);
+    await ctx.reply(message);
 });
 
 
 bot.on("callback_query", async (ctx) => {
     // @ts-ignore: Property 'data' does not exist on type 'CallbackQuery'.
-    if (!ctx.update.callback_query || !ctx.update.callback_query.data) {
+    if (!ctx.update?.callback_query?.data) {
         return;
     }
 
     // @ts-ignore: Property 'data' does not exist on type 'CallbackQuery'.
-    const [action, id] = ctx.update.callback_query.data.split(":");
+    const [entity, action, id] = ctx.update.callback_query.data.split(":");
+    
+    if (entity === "summaryChunkItem") {
+        const item = await dataSource.getRepository(SummaryChunkItem).findOne({
+            relations: {
+                chunk: true,
+            },
+            where: {
+                id: Number(id)
+            },
+        });
 
-    if (action === "approve") {
-        const summary = await dataSource.manager.findOneBy(Summary, {id});
-        if (!summary) {
+        if (!item) {
             return;
         }
 
-        summary.isApproved = true;
+        item.isApproved = action === "include";
+        await dataSource.manager.save(item);
 
-        await dataSource.manager.save(summary);
+        const chunk = await dataSource.getRepository(SummaryChunk).findOne({
+            relations: {
+                items: true,
+            },
+            where: {
+                id: item.chunk.id
+            },
+        });
 
-        if (ctx.update.callback_query.message && ctx.update.callback_query.message.message_id) {
+        if (!chunk) {
+            return;
+        }
+
+        if (ctx.update.callback_query?.message?.message_id) {
+            const message = renderAdminSummaryChunkMessage(chunk);
+
             try {
-                await bot.telegram.editMessageReplyMarkup(
+                await bot.telegram.editMessageText(
                     config.telegram_channel.id,
                     ctx.update.callback_query.message.message_id,
                     ctx.update.callback_query.id,
+                    message.text,
                     {
-                        inline_keyboard: [
-                            [{ text: "Публікацію підтверджено ✅", callback_data: "approved" }]
-                        ]
+                        reply_markup: message.reply_markup,
+                        parse_mode: "HTML",
                     }
                 );
             } catch (error: any) {
-                if (error.code === "ER_DUP_ENTRY") {
-                    await bot.telegram.answerCbQuery(ctx.update.callback_query.id, "⚠️ Публікацію вже підтверджено");
+                if (error.response && error.response.error_code === 400 && error.response.description.includes("Bad Request: message is not modified")) {
+                    await bot.telegram.answerCbQuery(ctx.update.callback_query.id, "⚠️ Зафіксовано повторний або одночасний клік");
+                } else if (error.response && error.response.error_code === 429) {
+                    notifyAdmins(`<i>⚠️ Занадто багато кліків</i>`);
                 } else {
                     logger.error(error);
                 }
             }
         }
-    } else if (action === "approved") {
-        await bot.telegram.answerCbQuery(ctx.update.callback_query.id, "⚠️ Публікацію вже підтверджено");
-    } else if (action === "reaction") {
-        const [status, themeId] = id.split("-");
-        const userId = ctx.from?.id;
-
-        if (!userId) {
-            return;
-        }
-
-        let user = await dataSource.manager.findOneBy(User, { userId });
-        if (!user) {
-            user = new User(
-                ctx.from?.id,
-                ctx.from?.first_name,
-                ctx.from?.last_name,
-                ctx.from?.username,
-            );
-            await dataSource.manager.save(user);
-        }
-
-        const theme = await dataSource.manager.findOneBy(SummaryTheme, { id: themeId });
-        if (!theme) {
-            return;
-        }
-
-        await bot.telegram.answerCbQuery(ctx.update.callback_query.id, "😎 Дякуємо за зворотний зв'язок");
-
-        const reaction = new SummaryReaction(user, theme, status);
-        await dataSource.manager.save(reaction);
     }
+});
+
+
+bot.catch((error: unknown, ctx: Context) => {
+    logger.error(error);
 });
 
 

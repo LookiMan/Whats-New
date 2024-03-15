@@ -2,8 +2,13 @@ import { EntitySubscriberInterface, EventSubscriber, InsertEvent } from "typeorm
 
 import { Summary } from "./models/Summary";
 
-import { formatSummary } from "./utils";
-import { sendAdminsNotification } from "./utils";
+import { notifyAdmins } from "./utils";
+import { renderAdminSummaryChunkMessage } from "./utils";
+
+import Logger from "./logger";
+
+
+const logger = Logger.getInstance("bot");
 
 
 @EventSubscriber()
@@ -13,16 +18,16 @@ export class SummarySubscriber implements EntitySubscriberInterface<Summary> {
     }
 
     afterInsert(event: InsertEvent<Summary>) {
-        const replyMarkup = event.entity.chunks ? {
-            inline_keyboard: [
-                [{ text: "Підтвердити публікацію", callback_data: `approve:${event.entity.id}` }]
-            ]
-        } : undefined;
+        notifyAdmins(event.entity.label);
+    
+        for (const chunk of event.entity.chunks) {
+            try {
+                const message = renderAdminSummaryChunkMessage(chunk);
 
-        sendAdminsNotification(
-            formatSummary(event.entity.label, event.entity.rawText),
-            replyMarkup
-        )
-
+                notifyAdmins(message.text, { reply_markup: message.reply_markup, disable_notification: true });
+            } catch (error: any) {
+                logger.error(error);
+            }
+        }
     }
 }

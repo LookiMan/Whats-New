@@ -6,12 +6,15 @@ import { bot } from "./bot";
 import { Post } from "./models/Post";
 import { Summary } from "./models/Summary";
 import { SummaryChunk } from "./models/SummaryChunk";
-import { SummaryTheme } from "./models/SummaryTheme";
+import { SummaryChunkItem } from "./models/SummaryChunkItem";
 import { User } from "./models/User";
 import { generateSummary } from "./summary";
 import { formatDate } from "./utils";
 import { formatSummary } from "./utils";
-import { sendAdminsNotification } from "./utils";
+import { notifyAdmins } from "./utils";
+import { splitSummary } from "./utils";
+import { replaceMarkdownWithHTML } from "./utils";
+import type { SummaryPost } from "./types/post.type";
 
 import dataSource from "./data-source";
 import Logger from "./logger";
@@ -22,15 +25,16 @@ const logger = Logger.getInstance("tasks");
 
 async function createSummaryPostTask(startDate: Date, endDate: Date, summaryLabel: string): Promise<void> {
 
-    sendAdminsNotification('Старт створення підсумків...');
+    notifyAdmins('<i>⚙️ Початок створення підсумків...</i>');
 
-    const posts = await dataSource.getRepository(Post).find({
+    const posts: Post[] = await dataSource.getRepository(Post).find({
         select: {
             'text': true
         },
         where: {
             postDate: Between(formatDate(startDate), formatDate(endDate)),
             text: Not(IsNull()),
+            isDeleted: false,
         }
     });
 
@@ -39,25 +43,34 @@ async function createSummaryPostTask(startDate: Date, endDate: Date, summaryLabe
 
     if (posts) {
         try {
-            summary.rawText = await generateSummary(posts);
+            summary.rawText = replaceMarkdownWithHTML(await generateSummary(posts as SummaryPost[]));
         } catch (error: any) {
             logger.error(error);
-            sendAdminsNotification(`При створенні підсумків виникла помилка: <pre>${error}<pre>`);
+
+            notifyAdmins(`<b>⚠️ При створенні підсумків виникла помилка:</b> <pre>${error}</pre>`);
+            
+            setTimeout(async () => {
+                await createSummaryPostTask(startDate, endDate, summaryLabel);
+            }, 60 * 1000);
             return;
         }
 
-        for (const chunkText of summary.rawText.split(':DELIMITER:')) {
-            const chunk = new SummaryChunk(chunkText.trim());
-            const match = chunk.text.match(/<b>(.*?)<\/b>/);
-            const label = match ? match[1].replace(":", "") : "Інші";
-            const theme = await dataSource.manager.findOneBy(SummaryTheme, { label });
+        for (const chunkText of splitSummary(summary.rawText)) {
+            const text = chunkText.trim();
+            const match = text.match(/<b>(.*?)<\/b>/);
+            const label = match ? match[1].replace(":", "") : "Інші новини";
+            const chunk = new SummaryChunk(label, text);
 
-            if (theme) {
-                chunk.theme = theme;
-            } else {
-                const theme = new SummaryTheme(label);
-                await dataSource.manager.save(theme);
-                chunk.theme = theme;
+            const items = chunkText.match(/-(.+?)[\r\n\.]/g) || [];
+            for (const item of items) {
+                const chunkItem = new SummaryChunkItem(item);
+                await dataSource.manager.save(chunkItem);
+
+                if (!chunk.items) {
+                    chunk.items = [chunkItem];
+                } else {
+                    chunk.items.push(chunkItem);
+                }
             }
 
             await dataSource.manager.save(chunk);
@@ -147,11 +160,10 @@ export async function sendSummaryPostTask(): Promise<void> {
     const summary = await dataSource.getRepository(Summary).findOne({
         relations: {
             chunks: {
-                theme: true,
+                items: true,
             },
         },
         where: {
-            isApproved: true,
             isSubmitted: false,
         },
     });
@@ -163,7 +175,7 @@ export async function sendSummaryPostTask(): Promise<void> {
     const label = summary.label;
 
     if (!summary.chunks) {
-        sendAdminsNotification(`${label} - відсутні блоки новин для розсилки.\n\n⚠️ Розсилка неможлива`);
+        notifyAdmins(`${label} - відсутні блоки новин для розсилки.\n\n⚠️ Розсилка неможлива`);
         return;
     }
 
@@ -178,11 +190,17 @@ export async function sendSummaryPostTask(): Promise<void> {
     });
 
     for (const user of users) {
-        for (const [index, chunk] of summary.chunks.entries()) {
+        await bot.telegram.sendMessage(user.userId, label, {parse_mode: "HTML"});
+
+        for (const chunk of summary.chunks) {
+            if (chunk.isEmpty()) {
+                continue;
+            }
+
             try {
-                bot.telegram.sendMessage(user.userId, formatSummary(label, chunk.text), {
+                await bot.telegram.sendMessage(user.userId, formatSummary(chunk), {
                     parse_mode: "HTML",
-                    disable_notification: index !== summary.chunks.length - 1,
+                    disable_notification: false,
                 });
             } catch (error: any) {
                 logger.error(error);

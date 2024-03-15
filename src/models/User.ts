@@ -1,8 +1,6 @@
 import "reflect-metadata";
 
-import { Entity, PrimaryGeneratedColumn, CreateDateColumn, Column, OneToMany } from "typeorm";
-
-import { SummaryReaction } from "./SummaryReaction"; 
+import { Entity, PrimaryGeneratedColumn, CreateDateColumn, Column } from "typeorm";
 
 
 @Entity()
@@ -21,9 +19,6 @@ export class User {
 
     @Column({ nullable: true })
     username!: string;
-
-    @OneToMany(() => SummaryReaction, reaction => reaction.user)
-    reactions!: SummaryReaction[];
 
     @CreateDateColumn({ type: "timestamp" })
     created_at!: Date;

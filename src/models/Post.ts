@@ -1,6 +1,6 @@
 import "reflect-metadata";
 
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 import { Channel } from "./Channel";
 
@@ -11,7 +11,7 @@ export class Post {
     id!: number;
 
     @Column({ nullable: true, type: "text" })
-    text: string = "";
+    text?: string;
 
     @Column({ default: () => "CURRENT_TIMESTAMP", type: "timestamp" })
     postDate!: Date;
@@ -39,4 +39,10 @@ export class Post {
 
     @Column("json", { nullable: true })
     reactions?: any;
+
+    @Column({ type: "boolean", default: false })
+    isDeleted: boolean = false;
+
+    @Column({ type: "boolean", default: false })
+    isEdited: boolean = false;
 }

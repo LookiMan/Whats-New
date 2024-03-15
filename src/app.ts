@@ -19,7 +19,13 @@ dataSource.initialize().then(async () => {
         );
 
         await crawler.start();
-        await bot.launch();
+        while (true) {
+            try {
+                await bot.launch();
+            } catch {
+                // bot.stop();
+            }
+        }
     } catch (error: any) {
         logger.error(error);
     }

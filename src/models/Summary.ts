@@ -1,6 +1,6 @@
 import "reflect-metadata";
 
-import { Entity, PrimaryGeneratedColumn, CreateDateColumn, Column, OneToMany } from "typeorm";
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 import { SummaryChunk } from "./SummaryChunk";
 
@@ -18,9 +18,6 @@ export class Summary {
 
     @OneToMany(() => SummaryChunk, chunk => chunk.summary)
     chunks!: SummaryChunk[];
-
-    @Column({ type: "boolean", default: false })
-    isApproved: boolean = false;
 
     @Column({ type: "boolean", default: false })
     isSubmitted: boolean= false;
