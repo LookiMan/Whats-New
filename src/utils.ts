@@ -81,7 +81,7 @@ export function createMessage(timeDiff: number): string {
     if (timeDiff < 0) {
         return "Очікуй короткі підсумки новин вже завтра о 9:00";
     } else if (timeDiff === 0) {
-        return "Залишилося ще трішки";
+        return "До підсумків новин залишилося ще трішки";
     } else {
         const timeStr = timeDiff === 1 ? "годину" : "години";
         return `Очікуй короткі підсумки новин через ${timeDiff} ${timeStr}`;
@@ -118,5 +118,5 @@ export function renderAdminSummaryChunkMessage(chunk: SummaryChunk): {
 
 
 export function replaceMarkdownWithHTML(text: string): string {
-    return text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+    return text.replace(/\*\*(.*?)\*\*\n/g, '<b>$1</b>');
 }
