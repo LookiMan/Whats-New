@@ -118,5 +118,5 @@ export function renderAdminSummaryChunkMessage(chunk: SummaryChunk): {
 
 
 export function replaceMarkdownWithHTML(text: string): string {
-    return text.replace(/\*\*(.*?)\*\*\n/g, '<b>$1</b>');
+    return text.replace(/\*\*(.*?)\*\*\n/g, '<b>$1</b>\n');
 }

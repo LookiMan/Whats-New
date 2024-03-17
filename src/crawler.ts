@@ -51,7 +51,7 @@ class Crawler {
 
         const post = new Post();
         post.text = clearMessage(event.message.text);
-        
+
         post.chatId = Number(event.chatId);
         post.groupedId = Number(event.message.groupedId);
 
@@ -120,15 +120,15 @@ class Crawler {
                     console.log("Scan QR code to login");
                     QRCode.toString(`tg://login?token=${code.token.toString("base64url")}`)
                     .then((url: string) => {
-                        console.log(url)
+                        console.log(url);
                     })
                     .catch((err: Error) => {
-                        console.error(err)
+                        console.error(err);
                     })
                 },
                 onError: (err: Error) => console.log(err),
-            })
-            this.saveSession(this.client.session)
+            });
+            this.saveSession(this.client.session);
         }
     }
 

@@ -63,7 +63,7 @@ async function createSummaryPostTask(startDate: Date, endDate: Date, summaryLabe
 
             const items = chunkText.match(/-(.+?)[\r\n\.]/g) || [];
             for (const item of items) {
-                const chunkItem = new SummaryChunkItem(item);
+                const chunkItem = new SummaryChunkItem(item.trim());
                 await dataSource.manager.save(chunkItem);
 
                 if (!chunk.items) {
@@ -190,8 +190,6 @@ export async function sendSummaryPostTask(): Promise<void> {
     });
 
     for (const user of users) {
-        await bot.telegram.sendMessage(user.userId, label, {parse_mode: "HTML"});
-
         for (const chunk of summary.chunks) {
             if (chunk.isEmpty()) {
                 continue;
@@ -206,5 +204,7 @@ export async function sendSummaryPostTask(): Promise<void> {
                 logger.error(error);
             }
         }
+
+        await bot.telegram.sendMessage(user.userId, label, {parse_mode: "HTML"});
     }
 }
