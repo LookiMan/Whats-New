@@ -46,6 +46,10 @@
 
 `docker compose logs`
 
+**Connect to docker container:**
+
+`docker compose exec app bash`
+
 ### PM2 commands:
 
 **Monitoring CPU/Usage of each process:**
