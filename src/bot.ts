@@ -9,6 +9,7 @@ import { User } from "./models/User";
 
 import { sendSummary } from "./summary";
 import { createMessage } from "./utils";
+import { emojiRegex } from "./utils";
 import { getNextHour } from "./utils";
 import { getTimeDiff } from "./utils";
 import { notifyAdmins } from "./utils";
@@ -67,7 +68,7 @@ bot.start(async (ctx: Context) => {
             return;
         }
 
-        const label = summary.label.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, "").trim();
+        const label = summary.label.replace(emojiRegex, "").trim();
 
         await sendSummary(user, summary, { disable_notification: true, sendLabel: false });
         await ctx.reply(`Ось останні актуальні ${label.toLowerCase()} ⬆️`);
