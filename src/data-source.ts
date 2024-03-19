@@ -1,8 +1,5 @@
 import "reflect-metadata";
-
-import { DataSource } from "typeorm";
-import { DataSourceOptions } from "typeorm";
-
+import { DataSource, DataSourceOptions } from "typeorm";
 import config from "./config";
 
 
@@ -20,6 +17,4 @@ const connectionOptions: DataSourceOptions = {
     subscribers: [__dirname + "/subscribers.{js,ts}"],
 };
 
-
-const dataSource = new DataSource(connectionOptions)
-export default dataSource
+export default new DataSource(connectionOptions)

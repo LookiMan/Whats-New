@@ -1,5 +1,4 @@
-import { Context } from "telegraf";
-import { Telegraf } from "telegraf";
+import { Context, Telegraf } from "telegraf";
 import { message } from "telegraf/filters";
 
 import { Summary } from "./models/Summary";
@@ -8,12 +7,7 @@ import { SummaryChunkItem } from "./models/SummaryChunkItem";
 import { User } from "./models/User";
 
 import { sendSummary } from "./summary";
-import { createMessage } from "./utils";
-import { emojiRegex } from "./utils";
-import { getNextHour } from "./utils";
-import { getTimeDiff } from "./utils";
-import { notifyAdmins } from "./utils";
-import { renderAdminSummaryChunkMessage } from "./utils";
+import { createMessage, emojiRegex, getNextHour, getTimeDiff, notifyAdmins, renderAdminSummaryChunkMessage } from "./utils";
 
 import config from "./config";
 import dataSource from "./data-source";
@@ -39,7 +33,7 @@ bot.start(async (ctx: Context) => {
 
     const isUserExists = await dataSource.manager.existsBy(User, { userId: ctx.from?.id });
     if (!isUserExists) {
-        await ctx.reply(`Привіт ${ctx.from?.first_name} 👋 Очікуй короткі підсумки новин кожен день о 9:00, 12:00, 15:00 та 21:00`);
+        await ctx.reply(`Привіт ${ctx.from?.first_name} 👋 Очікуйте короткі підсумки новин щодня о 9:00, 12:00, 15:00 та 21:00`);
 
         const user = new User(
             ctx.from?.id,

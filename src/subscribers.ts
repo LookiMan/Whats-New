@@ -1,12 +1,7 @@
 import { EntitySubscriberInterface, EventSubscriber, InsertEvent } from "typeorm";
-
 import { Summary } from "./models/Summary";
-
-import { notifyAdmins } from "./utils";
-import { renderAdminSummaryChunkMessage } from "./utils";
-
+import { notifyAdmins, renderAdminSummaryChunkMessage } from "./utils";
 import Logger from "./logger";
-
 
 const logger = Logger.getInstance("bot");
 

@@ -97,7 +97,7 @@ class Crawler {
     }
 
     async deletedMessageHandler(event: DeletedMessageEvent): Promise<void> {
-        if (event && event.peer && typeof event.peer === 'object' && 'className' in event.peer && event.peer.className !== "PeerChannel") {
+        if (event?.peer && typeof event.peer === 'object' && 'className' in event.peer && event.peer.className !== "PeerChannel") {
             return;
         }
 
@@ -141,7 +141,7 @@ class Crawler {
 
         const info = await this.client.invoke(
             new Api.channels.GetChannels({
-            id: [channelId],
+                id: [channelId],
             })
         );
 

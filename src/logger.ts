@@ -28,19 +28,19 @@ class Logger {
         return Logger.instances.get(name)!;
     }
 
-    debug(message: any) {
+    debug(message: string) {
         this.logger.log({level: "debug", message}); 
     }
 
-    info(message: any) {
+    info(message: string) {
         this.logger.log({level: "info", message});     
     }
 
-    warn(message: any) {
+    warn(message: string) {
         this.logger.log({level: "warn", message});     
     }
 
-    error (message: any) {
+    error (message: string) {
         this.logger.log({level: "error", message});     
     }
 }

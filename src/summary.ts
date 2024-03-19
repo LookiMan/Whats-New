@@ -56,7 +56,7 @@ export async function generateSummary(posts: SummaryPost[]): Promise<string> {
     });
 
     const chat = generativeModel.startChat();
-    await chat.sendMessage("Зараз я почну передавати новини які тобі потрібно запам'ятовувати а тоді треба буде підвести підсумки");
+    await chat.sendMessage("Зараз я почну передавати новини які тобі потрібно запам'ятовувати а потім треба буде підвести підсумки");
     await delay(5);
 
     const groups = groupPosts(posts, 4096);
