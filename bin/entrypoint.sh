@@ -6,6 +6,12 @@ then
     yarn run watch
 else
     yarn install
-    yarn run build && yarn run migration:run
-    yarn run start
+    if yarn run build;
+    then
+        yarn run migration:run
+        yarn run start
+    else
+        echo "Build failed. Exiting..."
+        exit 1
+    fi
 fi

@@ -1,9 +1,10 @@
 import type { SummaryPost } from "./types/post.type";
 
 import config from "./config";
-
+import Logger from "./logger";
 
 const { VertexAI } = require("@google-cloud/vertexai");
+const logger = Logger.getInstance("summary");
 
 
 function delay(seconds: number) {
@@ -67,7 +68,9 @@ async function generateSummary(posts: SummaryPost[]): Promise<string> {
     let text: string;
     try {
         text = response.candidates[0].content.parts[0].text;
-    } catch (error) {
+    } catch (error: any) {
+        logger.error(response);
+        logger.error(error);
         if (error instanceof TypeError && error.message.includes("is not iterable")) {
             text = response.candidates[0].content.parts.text;
         } else {
