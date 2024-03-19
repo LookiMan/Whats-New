@@ -19,7 +19,7 @@
         "prettier": "^2.5.1"
     },
     "scripts": {
-        "build": "tsc --build --clean",
+        "build": "tsc --build",
         "start": "tsc --build && pm2-runtime start ecosystem.config.js",
         "watch": "ts-node-dev --respawn --transpile-only --watch src ./src/app.ts",
         "typeorm": "npm run build && npx typeorm -d ./dist/data-source.js",

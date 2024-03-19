@@ -2,10 +2,12 @@ import { Context } from "telegraf";
 import { Telegraf } from "telegraf";
 import { message } from "telegraf/filters";
 
+import { Summary } from "./models/Summary";
 import { SummaryChunk } from "./models/SummaryChunk";
 import { SummaryChunkItem } from "./models/SummaryChunkItem";
 import { User } from "./models/User";
 
+import { sendSummary } from "./summary";
 import { createMessage } from "./utils";
 import { getNextHour } from "./utils";
 import { getTimeDiff } from "./utils";
@@ -21,33 +23,62 @@ const bot = new Telegraf(config.telegram_bot.token);
 const logger = Logger.getInstance("bot");
 
 
+async function handleTextMessage(ctx: Context) {
+    const nextHour = getNextHour();
+    const timeDiff = getTimeDiff(nextHour);
+    const message = createMessage(timeDiff);
+    await ctx.reply(message);
+}
+
+
 bot.start(async (ctx: Context) => {
     if (!ctx.from) {
         return;
     }
 
-    let user = await dataSource.manager.findOneBy(User, { userId: ctx.from?.id });
+    const isUserExists = await dataSource.manager.existsBy(User, { userId: ctx.from?.id });
+    if (!isUserExists) {
+        await ctx.reply(`Привіт ${ctx.from?.first_name} 👋 Очікуй короткі підсумки новин кожен день о 9:00, 12:00, 15:00 та 21:00`);
 
-    if (!user) {
-        user = new User(
+        const user = new User(
             ctx.from?.id,
             ctx.from?.first_name,
             ctx.from?.last_name,
             ctx.from?.username,
         );
+
         await dataSource.manager.save(user);
+
+        const summary = await dataSource.getRepository(Summary).findOne({
+            relations: {
+                chunks: {
+                    items: true,
+                },
+            },
+            where: {
+                isSubmitted: true,
+            },
+            order: {
+                id: "DESC",
+            },
+        });
+
+        if (!summary) {
+            return;
+        }
+
+        const label = summary.label.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, "").trim();
+
+        await sendSummary(user, summary, { disable_notification: true, sendLabel: false });
+        await ctx.reply(`Ось останні актуальні ${label.toLowerCase()} ⬆️`);
+        await handleTextMessage(ctx);
+    } else {
+        await handleTextMessage(ctx);
     }
-
-    ctx.reply(`Привіт ${ctx.from?.first_name} 👋 Очікуй короткі підсумки новин кожен день о 9:00, 12:00, 15:00 та 21:00`);
 });
 
 
-bot.on(message("text"), async (ctx: Context) => {
-    const nextHour = getNextHour();
-    const timeDiff = getTimeDiff(nextHour);
-    const message = createMessage(timeDiff);
-    await ctx.reply(message);
-});
+bot.on(message("text"), handleTextMessage);
 
 
 bot.on("callback_query", async (ctx) => {

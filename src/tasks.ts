@@ -2,15 +2,14 @@ import { Between } from "typeorm"
 import { Not } from "typeorm";
 import { IsNull } from "typeorm";
 
-import { bot } from "./bot";
 import { Post } from "./models/Post";
 import { Summary } from "./models/Summary";
 import { SummaryChunk } from "./models/SummaryChunk";
 import { SummaryChunkItem } from "./models/SummaryChunkItem";
 import { User } from "./models/User";
 import { generateSummary } from "./summary";
+import { sendSummary } from "./summary";
 import { formatDate } from "./utils";
-import { formatSummary } from "./utils";
 import { notifyAdmins } from "./utils";
 import { splitSummary } from "./utils";
 import { replaceMarkdownWithHTML } from "./utils";
@@ -95,7 +94,7 @@ export async function createNightlySummaryPostTask(): Promise<void> {
     const START_HOUR = 21;
     const END_HOUR = 9;
 
-    const label = `🌙 <i>Нічні новини за ${START_HOUR}:00 - ${END_HOUR}:00</i>`;
+    const label = `🌙 Нічні новини за ${START_HOUR}:00 - ${END_HOUR}:00`;
 
     const endDate = new Date();
     endDate.setHours(END_HOUR, 0, 0, 0);
@@ -112,7 +111,7 @@ export async function createMorningSummaryPostTask(): Promise<void> {
     const START_HOUR = 9;
     const END_HOUR = 12;
 
-    const label =  `☕️ <i>Ранкові новини за ${START_HOUR}:00 - ${END_HOUR}:00</i>`;
+    const label =  `☕️ Ранкові новини за ${START_HOUR}:00 - ${END_HOUR}:00`;
 
     const startDate = new Date();
     startDate.setHours(START_HOUR, 0, 0, 0);
@@ -128,7 +127,7 @@ export async function createLunchSummaryPostTask(): Promise<void> {
     const START_HOUR = 12;
     const END_HOUR = 15;
 
-    const label = `🍝 <i>Обідні новини за ${START_HOUR}:00 - ${END_HOUR}:00</i>`;
+    const label = `🍝 Обідні новини за ${START_HOUR}:00 - ${END_HOUR}:00`;
 
     const startDate = new Date();
     startDate.setHours(START_HOUR, 0, 0, 0);
@@ -144,7 +143,7 @@ export async function createEveningSummaryPostTask(): Promise<void> {
     const START_HOUR = 15;
     const END_HOUR = 21;
 
-    const label = `🥱 <i>Вечірні новини за ${START_HOUR}:00 - ${END_HOUR}:00</i>`;
+    const label = `🥱 Вечірні новини за ${START_HOUR}:00 - ${END_HOUR}:00`;
 
     const startDate = new Date();
     startDate.setHours(START_HOUR, 0, 0, 0);
@@ -172,10 +171,8 @@ export async function sendSummaryPostTask(): Promise<void> {
         return;
     }
 
-    const label = summary.label;
-
     if (!summary.chunks) {
-        notifyAdmins(`${label} - відсутні блоки новин для розсилки.\n\n⚠️ Розсилка неможлива`);
+        notifyAdmins(`${summary.label} - відсутні блоки новин для розсилки.\n\n⚠️ Розсилка неможлива`);
         return;
     }
 
@@ -190,21 +187,6 @@ export async function sendSummaryPostTask(): Promise<void> {
     });
 
     for (const user of users) {
-        for (const chunk of summary.chunks) {
-            if (chunk.isEmpty()) {
-                continue;
-            }
-
-            try {
-                await bot.telegram.sendMessage(user.userId, formatSummary(chunk), {
-                    parse_mode: "HTML",
-                    disable_notification: false,
-                });
-            } catch (error: any) {
-                logger.error(error);
-            }
-        }
-
-        await bot.telegram.sendMessage(user.userId, label, {parse_mode: "HTML"});
+        await sendSummary(user, summary, { disable_notification: true, sendLabel: true });
     }
 }

@@ -1,3 +1,7 @@
+import { bot } from "./bot";
+import { formatSummary } from "./utils";
+import { Summary } from "./models/Summary";
+import { User } from "./models/User";
 import type { SummaryPost } from "./types/post.type";
 
 import config from "./config";
@@ -38,7 +42,7 @@ function groupPosts(posts: SummaryPost[], maxBlockSize: number): string[] {
 }
 
 
-async function generateSummary(posts: SummaryPost[]): Promise<string> {
+export async function generateSummary(posts: SummaryPost[]): Promise<string> {
     const vertex_ai = new VertexAI({project: config.vertex_ai.project, location: config.vertex_ai.location});
 
     const generativeModel = vertex_ai.preview.getGenerativeModel({
@@ -82,4 +86,23 @@ async function generateSummary(posts: SummaryPost[]): Promise<string> {
 };
 
 
-export { generateSummary }
+export async function sendSummary(user: User, summary: Summary, params: Record<string, any>): Promise<void> {
+    for (const chunk of summary.chunks) {
+        if (chunk.isEmpty()) {
+            continue;
+        }
+
+        try {
+            await bot.telegram.sendMessage(user.userId, formatSummary(chunk), {
+                parse_mode: "HTML",
+                disable_notification: params?.disable_notification,
+            });
+        } catch (error: any) {
+            logger.error(error);
+        }
+    }
+
+    if (params?.sendLabel) {
+        await bot.telegram.sendMessage(user.userId, `<i>${summary.label}</i> ⬆️`, {parse_mode: "HTML"});
+    }
+}
