@@ -6,7 +6,7 @@ import { DeletedMessage, DeletedMessageEvent } from "telegram/events/DeletedMess
 
 import { Channel } from "./models/Channel";
 import { Post } from "./models/Post";
-import { clearMessage } from "./utils"; 
+import { cleanMessage } from "./utils"; 
 
 import dataSource from "./data-source";
 import Logger from "./logger";
@@ -50,7 +50,7 @@ class Crawler {
         }
 
         const post = new Post();
-        post.text = clearMessage(event.message.text);
+        post.text = cleanMessage(event.message.text);
 
         post.chatId = Number(event.chatId);
         post.groupedId = Number(event.message.groupedId);
@@ -84,7 +84,7 @@ class Crawler {
             return;
         }
 
-        const newText = clearMessage(event.message.text);
+        const newText = cleanMessage(event.message.text);
         if (newText != post.text) {
             post.isEdited = true;
         }

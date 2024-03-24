@@ -6,7 +6,14 @@ import { SummaryChunk } from "./models/SummaryChunk";
 import { SummaryChunkItem } from "./models/SummaryChunkItem";
 import { User } from "./models/User";
 import { generateSummary, sendSummary } from "./summary";
-import { formatDate, notifyAdmins, splitSummary, replaceMarkdownWithHTML } from "./utils";
+import { 
+    cleanChunk,
+    formatDate,
+    notifyAdmins,
+    splitSummary,
+    replaceMarkdownWithHTML,
+    MAX_SUMMARY_CREATE_RETRIES,
+} from "./utils";
 import type { SummaryPost } from "./types/post.type";
 
 import dataSource from "./data-source";
@@ -16,7 +23,7 @@ import Logger from "./logger";
 const logger = Logger.getInstance("tasks");
 
 
-async function createSummaryPostTask(startDate: Date, endDate: Date, summaryLabel: string): Promise<void> {
+async function createSummaryPostTask(startDate: Date, endDate: Date, summaryLabel: string, retry: number = MAX_SUMMARY_CREATE_RETRIES): Promise<void> {
 
     notifyAdmins('<i>⚙️ Початок створення підсумків...</i>');
 
@@ -42,9 +49,12 @@ async function createSummaryPostTask(startDate: Date, endDate: Date, summaryLabe
 
             notifyAdmins(`<b>⚠️ При створенні підсумків виникла помилка:</b> <pre>${error}</pre>`);
             
-            setTimeout(async () => {
-                await createSummaryPostTask(startDate, endDate, summaryLabel);
-            }, 60 * 1000);
+            if (retry > 0) {
+                retry -= 1;
+                setTimeout(async () => {
+                    await createSummaryPostTask(startDate, endDate, summaryLabel, retry);
+                }, 60 * 1000);
+            }
             return;
         }
 
@@ -54,9 +64,9 @@ async function createSummaryPostTask(startDate: Date, endDate: Date, summaryLabe
             const label = match ? match[1].replace(":", "") : "Інші новини";
             const chunk = new SummaryChunk(label, text);
 
-            const items = chunkText.match(/-(.+?)[\r\n\.]/g) || [];
+            const items = chunkText.match(/\n[-*](.+?)[\r\n\.]/g) || [];
             for (const item of items) {
-                const chunkItem = new SummaryChunkItem(item.trim());
+                const chunkItem = new SummaryChunkItem(cleanChunk(item));
                 await dataSource.manager.save(chunkItem);
 
                 if (!chunk.items) {
@@ -154,10 +164,14 @@ export async function sendSummaryPostTask(): Promise<void> {
         relations: {
             chunks: {
                 items: true,
+                summary: true,
             },
         },
         where: {
             isSubmitted: false,
+        },
+        order: {
+            id: "DESC",
         },
     });
 

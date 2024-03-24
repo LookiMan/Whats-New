@@ -12,11 +12,26 @@ class Logger {
         }
 
         this.logger = winston.createLogger({
-            format: winston.format.json(),
+            format: winston.format.combine(
+                winston.format.timestamp(),
+                winston.format.printf(info => `${info.timestamp} [${info.level}]: ${info.message}`)
+            ),
             level: process.env.NODE_ENV === "production" ? "info" : "debug",
             transports: [
-                new winston.transports.File({ filename: `./logs/${name}.log` }),
-                new winston.transports.Console()
+                new winston.transports.File({ 
+                    filename: `./logs/${name}.log`,
+                    format: winston.format.combine(
+                        winston.format.timestamp(),
+                        winston.format.printf(info => `${info.timestamp} [${info.level}]: ${info.message}`)
+                    )
+                }),
+                new winston.transports.Console({
+                    format: winston.format.combine(
+                        winston.format.colorize(),
+                        winston.format.timestamp(),
+                        winston.format.printf(info => `${info.timestamp} [${info.level}]: ${info.message}`)
+                    )
+                })
             ]
         });
     }

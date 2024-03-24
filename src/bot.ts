@@ -7,7 +7,14 @@ import { SummaryChunkItem } from "./models/SummaryChunkItem";
 import { User } from "./models/User";
 
 import { sendSummary } from "./summary";
-import { createMessage, emojiRegex, getNextHour, getTimeDiff, notifyAdmins, renderAdminSummaryChunkMessage } from "./utils";
+import { 
+    createMessage,
+    EMOJI_REGEX,
+    getNextHour,
+    getTimeDiff,
+    notifyAdmins,
+    renderAdminSummaryChunkMessage
+} from "./utils";
 
 import config from "./config";
 import dataSource from "./data-source";
@@ -17,14 +24,12 @@ import Logger from "./logger";
 const bot = new Telegraf(config.telegram_bot.token);
 const logger = Logger.getInstance("bot");
 
-
 async function handleTextMessage(ctx: Context) {
     const nextHour = getNextHour();
     const timeDiff = getTimeDiff(nextHour);
     const message = createMessage(timeDiff);
     await ctx.reply(message);
 }
-
 
 bot.start(async (ctx: Context) => {
     if (!ctx.from) {
@@ -48,6 +53,7 @@ bot.start(async (ctx: Context) => {
             relations: {
                 chunks: {
                     items: true,
+                    summary: true,
                 },
             },
             where: {
@@ -62,7 +68,7 @@ bot.start(async (ctx: Context) => {
             return;
         }
 
-        const label = summary.label.replace(emojiRegex, "").trim();
+        const label = summary.label.replace(EMOJI_REGEX, "").trim();
 
         await sendSummary(user, summary, { disable_notification: true, sendLabel: false });
         await ctx.reply(`Ось останні актуальні ${label.toLowerCase()} ⬆️`);
@@ -72,9 +78,7 @@ bot.start(async (ctx: Context) => {
     }
 });
 
-
 bot.on(message("text"), handleTextMessage);
-
 
 bot.on("callback_query", async (ctx) => {
     // @ts-ignore: Property 'data' does not exist on type 'CallbackQuery'.
@@ -142,14 +146,11 @@ bot.on("callback_query", async (ctx) => {
     }
 });
 
-
 bot.catch((error: unknown, ctx: Context) => {
-    logger.error(error);
+    logger.error(JSON.stringify(error));
 });
-
 
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));
-
 
 export { bot }

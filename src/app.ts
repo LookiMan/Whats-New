@@ -27,7 +27,7 @@ dataSource.initialize().then(async () => {
             }
         }
     } catch (error: any) {
-        logger.error(error);
+        logger.error(JSON.stringify(error));
     }
 
-}).catch((error: Error) => logger.error(error));
+}).catch((error: Error) => logger.error(JSON.stringify(error)));

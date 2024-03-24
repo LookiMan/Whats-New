@@ -73,14 +73,14 @@ export async function generateSummary(posts: SummaryPost[]): Promise<string> {
     try {
         text = response.candidates[0].content.parts[0].text;
     } catch (error: any) {
-        logger.error(response);
-        logger.error(error);
+        logger.error(JSON.stringify(response));
+        logger.error(JSON.stringify(error));
         if (error instanceof TypeError && error.message.includes("is not iterable")) {
             text = response.candidates[0].content.parts.text;
         } else {
             throw error;
         }
-    } 
+    }
 
     return text;
 };
