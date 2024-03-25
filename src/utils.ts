@@ -2,14 +2,11 @@ import { InlineKeyboardButton, InlineKeyboardMarkup, ParseMode } from "telegraf/
 
 import { SummaryChunk } from "./models/SummaryChunk";
 
-import { bot } from "./bot";
+import { telebot } from "./app";
 
 import config from "./config";
 
-
-// https://github.com/nizaroni/emoji-strip/blob/master/dist/emoji-strip.js
 export const EMOJI_REGEX = /(?:🍝|🥱|🌙|☕️)/g;
-
 
 export const MAX_SUMMARY_CREATE_RETRIES = 10;
 
@@ -47,8 +44,7 @@ export function formatSummary(chunk: SummaryChunk): string {
         });
     }
 
-    const match = chunk.summary.label.match(EMOJI_REGEX);
-    const emoji = match && match.length > 0 ? match[0] : '🆕';
+    const emoji = getEmoji(chunk.summary.label, '🆕');
 
     return `${emoji} <b>${chunk.title}</b>\n\n${items.join('\n')}\n\n${copyright}`;
 }
@@ -68,7 +64,12 @@ export function notifyAdmins(message: string, options?: {
         ...options
     };
 
-    bot.telegram.sendMessage(config.telegram_channel.id, message, params);
+    telebot.sendMessage(config.telegram_channel.id, message, params);
+}
+
+export function getEmoji(text: string, defaultEmoji: string = '🔹'): string {
+    const match = text.match(EMOJI_REGEX);
+    return match && match.length > 0 ? match[0] : defaultEmoji;
 }
 
 export function getNextHour(): number {
@@ -98,7 +99,7 @@ export function createMessage(timeDiff: number): string {
     }
 }
 
-export function renderAdminSummaryChunkMessage(chunk: SummaryChunk): {
+export function renderAdminSummaryChunkMessage(chunk: SummaryChunk, label: string): {
     text: string,
     reply_markup: InlineKeyboardMarkup,
 } {
@@ -117,8 +118,10 @@ export function renderAdminSummaryChunkMessage(chunk: SummaryChunk): {
         } 
     });
 
+    const emoji = getEmoji(label, '🆕');
+
     return {
-        text: `<b>${chunk.title}</b>\n\n${chunkItems.join('\n')}`,
+        text: `${emoji} <b>${chunk.title}</b>\n\n${chunkItems.join('\n')}`,
         reply_markup: {
             inline_keyboard: [chunkButtons]
         }

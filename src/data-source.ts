@@ -2,7 +2,6 @@ import "reflect-metadata";
 import { DataSource, DataSourceOptions } from "typeorm";
 import config from "./config";
 
-
 const connectionOptions: DataSourceOptions = {
     type: config.db.type,
     host: config.db.host,

@@ -8,7 +8,7 @@ export class User {
     @PrimaryGeneratedColumn()
     id!: number;
 
-    @Column({ type: "bigint" })
+    @Column({ type: "bigint", unique: true })
     userId!: number;
 
     @Column()
@@ -19,6 +19,15 @@ export class User {
 
     @Column({ nullable: true })
     username!: string;
+
+    @Column({ type: "boolean", default: true })
+    isActive: boolean = true;
+
+    @CreateDateColumn({ type: "timestamp", nullable: true })
+    deactivationDate!: Date;
+
+    @CreateDateColumn({ type: "timestamp", nullable: true })
+    lastSummaryDate!: Date;
 
     @CreateDateColumn({ type: "timestamp" })
     created_at!: Date;

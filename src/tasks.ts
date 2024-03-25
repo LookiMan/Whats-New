@@ -19,9 +19,7 @@ import type { SummaryPost } from "./types/post.type";
 import dataSource from "./data-source";
 import Logger from "./logger";
 
-
 const logger = Logger.getInstance("tasks");
-
 
 async function createSummaryPostTask(startDate: Date, endDate: Date, summaryLabel: string, retry: number = MAX_SUMMARY_CREATE_RETRIES): Promise<void> {
 
@@ -48,11 +46,10 @@ async function createSummaryPostTask(startDate: Date, endDate: Date, summaryLabe
             logger.error(error);
 
             notifyAdmins(`<b>⚠️ При створенні підсумків виникла помилка:</b> <pre>${error}</pre>`);
-            
+
             if (retry > 0) {
-                retry -= 1;
                 setTimeout(async () => {
-                    await createSummaryPostTask(startDate, endDate, summaryLabel, retry);
+                    await createSummaryPostTask(startDate, endDate, summaryLabel, retry -= 1);
                 }, 60 * 1000);
             }
             return;
@@ -93,7 +90,6 @@ async function createSummaryPostTask(startDate: Date, endDate: Date, summaryLabe
     await dataSource.manager.save(summary);
 }
 
-
 export async function createNightlySummaryPostTask(): Promise<void> {
     const START_HOUR = 21;
     const END_HOUR = 9;
@@ -110,7 +106,6 @@ export async function createNightlySummaryPostTask(): Promise<void> {
     await createSummaryPostTask(startDate, endDate, label);
 }
 
-
 export async function createMorningSummaryPostTask(): Promise<void> {
     const START_HOUR = 9;
     const END_HOUR = 12;
@@ -125,7 +120,6 @@ export async function createMorningSummaryPostTask(): Promise<void> {
 
     await createSummaryPostTask(startDate, endDate, label);
 }
-
 
 export async function createLunchSummaryPostTask(): Promise<void> {
     const START_HOUR = 12;
@@ -142,7 +136,6 @@ export async function createLunchSummaryPostTask(): Promise<void> {
     await createSummaryPostTask(startDate, endDate, label);
 }
 
-
 export async function createEveningSummaryPostTask(): Promise<void> {
     const START_HOUR = 15;
     const END_HOUR = 21;
@@ -157,7 +150,6 @@ export async function createEveningSummaryPostTask(): Promise<void> {
 
     await createSummaryPostTask(startDate, endDate, label);
 }
-
 
 export async function sendSummaryPostTask(): Promise<void> {
     const summary = await dataSource.getRepository(Summary).findOne({
@@ -189,9 +181,9 @@ export async function sendSummaryPostTask(): Promise<void> {
     await dataSource.manager.save(summary);
 
     const users = await dataSource.getRepository(User).find({
-        select: {
-            'userId': true
-        },
+        where: {
+            isActive: true,
+        }
     });
 
     for (const user of users) {

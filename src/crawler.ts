@@ -11,11 +11,9 @@ import { cleanMessage } from "./utils";
 import dataSource from "./data-source";
 import Logger from "./logger";
 
-
 const fs = require("fs");
 const QRCode = require("qrcode");
 const logger = Logger.getInstance("crawler");
-
 
 class Crawler {
     private apiId: number;
@@ -166,5 +164,4 @@ class Crawler {
     }
 }
 
-
-export { Crawler }
+export default Crawler
