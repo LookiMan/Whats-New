@@ -47,7 +47,7 @@ export async function generateSummary(posts: SummaryPost[]): Promise<string> {
         model: config.vertex_ai.model,
         generation_config: {
             "max_output_tokens": 4096,
-            "temperature": 0.8,
+            "temperature": 0.4,
             "top_p": 1,
             "top_k": 32
         },
