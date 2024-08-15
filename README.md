@@ -2,8 +2,7 @@
 
 **The goal of this project was to develop a solution for collecting data from Telegram channels, with the aim of collecting data and then summarizing it over time**
 
-![](https://github.com/LookiMan/Whats-New/blob/master/screnshots/example.png)
-
+![](https://github.com/LookiMan/Whats-New/blob/main/screnshots/example.png)
 
 ### Configuration:
 
