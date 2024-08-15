@@ -1,5 +1,10 @@
 # Whats New
 
+**The goal of this project was to develop a solution for collecting data from Telegram channels, with the aim of collecting data and then summarizing it over time**
+
+![](https://github.com/LookiMan/Whats-New/blob/master/screnshots/example.png)
+
+
 ### Configuration:
 
 **Create .env environment file using .env.ini as template:**
