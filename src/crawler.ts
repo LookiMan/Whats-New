@@ -6,7 +6,7 @@ import { DeletedMessage, DeletedMessageEvent } from "telegram/events/DeletedMess
 
 import { Channel } from "./models/Channel";
 import { Post } from "./models/Post";
-import { cleanMessage } from "./utils"; 
+import { cleanMessage, detectLang } from "./utils"; 
 
 import dataSource from "./data-source";
 import Logger from "./logger";
@@ -49,6 +49,8 @@ class Crawler {
 
         const post = new Post();
         post.text = cleanMessage(event.message.text);
+        post.lang = detectLang(post.text);
+        post.entities = event.message.entities;
 
         post.chatId = Number(event.chatId);
         post.groupedId = Number(event.message.groupedId);
@@ -87,6 +89,7 @@ class Crawler {
             post.isEdited = true;
         }
         post.text = newText;
+        post.entities = event.message.entities;
         post.views = event.message.views;
         post.forwards = event.message.forwards;
         post.reactions = event.message.reactions?.results;

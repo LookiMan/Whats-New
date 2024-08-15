@@ -22,13 +22,14 @@ function groupPosts(posts: SummaryPost[], maxBlockSize: number): string[] {
 
     for (const post of posts) {
         const textLength = post.text.length;
+        const text = `/#MID: ${post.id} /#; /#MESSAGE: ${post.text} /#;}`
 
         if (currentBlockSize + textLength <= maxBlockSize) {
-            currentBlock.push(post.text);
+            currentBlock.push(text);
             currentBlockSize += textLength;
         } else {
             result.push(currentBlock.join(', '));
-            currentBlock = [post.text];
+            currentBlock = [text];
             currentBlockSize = textLength;
         }
     }
@@ -54,7 +55,7 @@ export async function generateSummary(posts: SummaryPost[]): Promise<string> {
     });
 
     const chat = generativeModel.startChat();
-    await chat.sendMessage("Зараз я почну передавати новини які тобі потрібно запам'ятовувати а потім треба буде підвести підсумки");
+    await chat.sendMessage("Зараз я почну передавати новини (в форматі /#MID: ідентифікатор новини /#; /#MESSAGE: текст новини /#;) які тобі потрібно запам'ятовувати а потім треба буде підвести підсумки");
     await delay(5);
 
     const groups = groupPosts(posts, 4096);
@@ -63,7 +64,7 @@ export async function generateSummary(posts: SummaryPost[]): Promise<string> {
         await delay(10);
     }
 
-    const summary = await chat.sendMessage("Завдання: Відбери теми найчастіше згадуваних новин з тих, що ти отримав (а не з інтернету) і розкажи про них, використовуючи надану інформацію. Напиши мінімум декілька речень про кожну новину та згрупуй їх за темами. Умови: Звіт повинен бути тільки українською мовою, не містити реклами чи інформацію схожу на неї та нецензурну лексику. Для форматування списку використовуйте символ '-' замість не нумерованого списку. Не додавай блок 'Детальніше про деякі новини', 'Підсумки' чи інші висновки про новини.");
+    const summary = await chat.sendMessage("Завдання: Вибери найважливіші та унікальні ідентифікатори новин, які, на твою думку, найбільше відображають актуальні події. Умови: Перерахуй вибрані ідентифікатори новин через кому. Не включай до вибору рекламні матеріали, провокаційні повідомлення або новини з недостатньою корисною інформацією.");
 
     const response = await summary.response;
 
@@ -71,8 +72,6 @@ export async function generateSummary(posts: SummaryPost[]): Promise<string> {
     try {
         text = response.candidates[0].content.parts[0].text;
     } catch (error: any) {
-        logger.error(JSON.stringify(response));
-        logger.error(JSON.stringify(error));
         if (error instanceof TypeError && error.message.includes("is not iterable")) {
             text = response.candidates[0].content.parts.text;
         } else {
@@ -81,7 +80,7 @@ export async function generateSummary(posts: SummaryPost[]): Promise<string> {
     }
 
     return text;
-};
+}
 
 export async function sendSummary(user: User, summary: Summary, params: Record<string, any>): Promise<void> {
     for (const chunk of summary.chunks) {

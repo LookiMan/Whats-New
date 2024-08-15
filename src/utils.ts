@@ -1,10 +1,16 @@
-import { InlineKeyboardButton, InlineKeyboardMarkup, ParseMode } from "telegraf/types";
+import {
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    MessageEntity,
+    ParseMode
+} from "telegraf/types";
 
 import { SummaryChunk } from "./models/SummaryChunk";
-
 import { telebot } from "./app";
 
+import LanguageDetect from 'languagedetect';
 import config from "./config";
+import type { ParsedEntity } from "./types/utils.type";
 
 export const EMOJI_REGEX = /(?:🍝|🥱|🌙|☕️)/g;
 
@@ -132,4 +138,43 @@ export function replaceMarkdownWithHTML(text: string): string {
     text = text.replace(/\*\*(.*?)\*\*\n/g, '<b>$1</b>\n');
     text = text.replace(/\_\_(.*?)\_\_/g, '<i>$1</i>');
     return text;
+}
+
+export function parseEntities(rawEntities: (MessageEntity.AbstractMessageEntity | MessageEntity.TextLinkMessageEntity)[]): ParsedEntity[] | null {
+    const mapper: Record<string, ParsedEntity['type']> = {
+        MessageEntityBold: 'bold',
+        MessageEntityCode: 'code',
+        MessageEntityItalic: 'italic',
+        MessageEntityStrike: 'strikethrough',
+        MessageEntityTextUrl: 'text_link',
+        MessageEntitySpoiler: 'spoiler',
+        MessageEntityUnderline: 'underline',
+        MessageEntityBlockquote: 'blockquote',
+    };
+
+    if (!rawEntities) {
+        return null;
+    }
+
+    const entities: ParsedEntity[] = [];
+    for (const entity of rawEntities) {
+        // @ts-ignore
+        const type = mapper[entity.className];
+
+        if (type) {
+            const entityObject: ParsedEntity = { type, offset: entity.offset, length: entity.length };
+            if (type === 'text_link' && 'url' in entity) {
+                entityObject.url = entity.url;
+            }
+
+            entities.push(entityObject);
+        }
+    }
+
+    return entities;
+}
+
+export function detectLang(text: string): string {
+    const detector = new LanguageDetect();
+    return detector.detect(text, 1)[0][0];
 }

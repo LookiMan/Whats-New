@@ -1,6 +1,6 @@
 FROM node:latest
 
-WORKDIR /usr/src/tele_feed/
+WORKDIR /usr/src/whats_new/
 
 # Bundle app source
 COPY . .

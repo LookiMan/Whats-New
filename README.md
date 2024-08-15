@@ -1,4 +1,4 @@
-# Tele Feed
+# Whats New
 
 ### Configuration:
 
@@ -16,7 +16,7 @@
 
 **Migrate:**
 
-`npm run migration:run`
+`docker compose exec app npm run migration:run`
 
 ### Development:
 
@@ -26,11 +26,11 @@
 
 **Make migrations:**
 
-`npm run migration:generate -n ./src/migrations/<MIGRATION_NAME>`
+`docker compose exec app npm run migration:generate -n ./src/migrations/<MIGRATION_NAME>`
 
 **Migrate:**
 
-`npm run migration:run`
+`docker compose exec app npm run migration:run`
 
 **Down container:**
 

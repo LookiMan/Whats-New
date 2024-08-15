@@ -13,6 +13,12 @@ export class Post {
     @Column({ nullable: true, type: "text" })
     text?: string;
 
+    @Column({ nullable: true })
+    lang!: string;
+
+    @Column("json", { nullable: true })
+    entities: any;
+
     @Column({ default: () => "CURRENT_TIMESTAMP", type: "timestamp" })
     postDate!: Date;
 

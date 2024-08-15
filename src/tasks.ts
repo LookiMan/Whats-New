@@ -27,11 +27,13 @@ async function createSummaryPostTask(startDate: Date, endDate: Date, summaryLabe
 
     const posts: Post[] = await dataSource.getRepository(Post).find({
         select: {
+            'id': true,
             'text': true
         },
         where: {
             postDate: Between(formatDate(startDate), formatDate(endDate)),
             text: Not(IsNull()),
+            lang: "ukrainian",
             isDeleted: false,
         }
     });
